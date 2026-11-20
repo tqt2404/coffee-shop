@@ -1,30 +1,71 @@
 import { useState } from 'react';
-import { Check, Compass, Copy, ExternalLink, MapPin, Navigation } from 'lucide-react';
+import {
+  Calendar,
+  Check,
+  Compass,
+  Copy,
+  ExternalLink,
+  MapPin,
+  MessageSquare,
+  Navigation,
+  X,
+} from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { STORE_BRANCHES, type StoreBranch } from '../data/products';
+import { STORE_BRANCHES, type StoreBranch } from '../../data/products';
+import type { TastingBookingInput, TastingBookingRecord } from '../../types/shop';
 import {
   FAST_MORPH_SPRING,
   MORPH_SPRING,
   ORGANIC_SPRING,
   SILK_EASE,
-} from '../utils/motion';
+} from '../../utils/motion';
+import { createBookingRecord, validateTastingBooking } from '../../utils/shop';
 import {
   BronzeCorners,
   MorphLayer,
   MorphPage,
   MorphRule,
   SplitHeadline,
-} from './MorphStage';
+} from '../../components/motion/MorphStage';
 
 interface StoreLocatorSectionProps {
   onOpenBookingChat: (branchName: string) => void;
+  onCreateBooking: (booking: TastingBookingRecord) => Promise<void>;
 }
 
-export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionProps) {
+const TIME_SLOTS = ['09:00 – 10:30', '14:00 – 15:30', '16:30 – 18:00'];
+
+function getDefaultDate(): string {
+  const tomorrow = new Date(Date.now() + 86400000);
+  const y = tomorrow.getFullYear();
+  const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+  const d = String(tomorrow.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function StoreLocatorSection({
+  onOpenBookingChat,
+  onCreateBooking,
+}: StoreLocatorSectionProps) {
   const [selectedId, setSelectedId] = useState<'dalat' | 'hanoi'>('dalat');
   const [showRoute, setShowRoute] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [mapHovered, setMapHovered] = useState(false);
+
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState<TastingBookingRecord | null>(null);
+  const [bookingErrors, setBookingErrors] = useState<
+    Partial<Record<keyof TastingBookingInput, string>>
+  >({});
+  const [bookingForm, setBookingForm] = useState({
+    guestName: '',
+    guestPhone: '',
+    date: getDefaultDate(),
+    timeSlot: TIME_SLOTS[0],
+    guests: 2,
+    note: '',
+  });
 
   const branch: StoreBranch =
     STORE_BRANCHES.find((b) => b.id === selectedId) || STORE_BRANCHES[0];
@@ -38,6 +79,38 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
     } catch {
       setCopiedId(branch.id);
       window.setTimeout(() => setCopiedId(null), 2200);
+    }
+  };
+
+  const handleSubmitBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const input: TastingBookingInput = {
+      branchId: branch.id,
+      branchName: branch.name,
+      ...bookingForm,
+    };
+    const validation = validateTastingBooking(input);
+    if (!validation.isValid) {
+      setBookingErrors(validation.errors);
+      return;
+    }
+
+    setBookingSubmitting(true);
+    setBookingErrors({});
+    try {
+      const record = createBookingRecord(input);
+      await onCreateBooking(record);
+      setBookingSuccess(record);
+      setBookingForm({
+        guestName: '',
+        guestPhone: '',
+        date: getDefaultDate(),
+        timeSlot: TIME_SLOTS[0],
+        guests: 2,
+        note: '',
+      });
+    } finally {
+      setBookingSubmitting(false);
     }
   };
 
@@ -130,7 +203,7 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        {/* Left: Architectural Flat Cartographic Map with Self-Drawing Streets, Pulsing Pin & Rotating Compass */}
+        {/* Left: Architectural Flat Cartographic Map */}
         <MorphLayer
           vector="tilt-left"
           stagger={0.025}
@@ -192,7 +265,6 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
                 aria-label={`Bản đồ vị trí và tuyến đường tới ${branch.name}`}
                 className="w-full h-full max-h-[380px] border border-[#DDD8CE] bg-[#F8F7F4]"
               >
-                {/* Architectural Grid */}
                 <g stroke="#E6E1D7" strokeWidth="1">
                   <line x1="80" y1="0" x2="80" y2="290" />
                   <line x1="160" y1="0" x2="160" y2="290" />
@@ -204,7 +276,6 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
                   <line x1="0" y1="220" x2="480" y2="220" />
                 </g>
 
-                {/* Cross-Morphing Self-Drawing Streets, Lake & Staggered Landmarks */}
                 <AnimatePresence mode="wait">
                   <motion.g
                     key={`map-layer-${branch.id}`}
@@ -312,7 +383,6 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
                       </>
                     )}
 
-                    {/* Staggered Landmark Pins */}
                     {branch.landmarks.map((lm, idx) => (
                       <motion.g
                         key={lm.label}
@@ -346,7 +416,6 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
                   </motion.g>
                 </AnimatePresence>
 
-                {/* Animated Route Line Draw */}
                 <AnimatePresence>
                   {showRoute && (
                     <motion.g
@@ -381,7 +450,6 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
                   )}
                 </AnimatePresence>
 
-                {/* Gliding Store Pin with Subtle Concentric Flat Pulse Ring */}
                 <motion.g
                   initial={false}
                   animate={{ x: branch.pinPos.x, y: branch.pinPos.y }}
@@ -408,7 +476,6 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
                   </text>
                 </motion.g>
 
-                {/* North Indicator */}
                 <g transform="translate(445, 34)">
                   <rect
                     x="-14"
@@ -457,7 +524,7 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
           </div>
         </MorphLayer>
 
-        {/* Right: Branch Details & Step-by-Step Directions — Every Field & Step Cascades */}
+        {/* Right: Branch Details & Step-by-Step Directions */}
         <MorphLayer
           vector="tilt-right"
           stagger={0.045}
@@ -521,7 +588,6 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
                 </motion.div>
               </dl>
 
-              {/* Step-by-step Directions: Each step slides in individually */}
               <div className="mt-6">
                 <motion.h4
                   initial={{ opacity: 0 }}
@@ -555,12 +621,12 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
             </div>
           </AnimatePresence>
 
-          <div className="mt-7 pt-5 relative flex flex-col sm:flex-row gap-3">
+          <div className="mt-7 pt-5 relative space-y-2.5">
             <div className="absolute top-0 left-0 right-0">
               <MorphRule stagger={0.07} />
             </div>
 
-            <MorphLayer vector="left" stagger={0.075} distance={0.35} className="flex-1 flex">
+            <div className="flex flex-col sm:flex-row gap-2.5">
               <motion.button
                 type="button"
                 whileHover={{ y: -2 }}
@@ -581,23 +647,284 @@ export function StoreLocatorSection({ onOpenBookingChat }: StoreLocatorSectionPr
                   </>
                 )}
               </motion.button>
-            </MorphLayer>
 
-            <MorphLayer vector="right" stagger={0.085} distance={0.35} className="flex-1 flex">
               <motion.button
                 type="button"
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.97 }}
                 transition={ORGANIC_SPRING}
-                onClick={() => onOpenBookingChat(branch.name)}
-                className="flex-1 inline-flex items-center justify-center px-4 py-3 min-h-[44px] bg-[#1F3A2E] text-[#F8F7F4] text-sm font-medium hover:bg-[#162B22] transition-colors cursor-pointer"
+                onClick={() => {
+                  setBookingSuccess(null);
+                  setBookingErrors({});
+                  setBookingModalOpen(true);
+                }}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 min-h-[44px] bg-[#1F3A2E] text-[#F8F7F4] text-sm font-medium hover:bg-[#162B22] transition-colors cursor-pointer"
               >
-                Đặt lịch thử nếm
+                <Calendar className="w-4 h-4" aria-hidden="true" />
+                <span>Đặt lịch thử nếm</span>
               </motion.button>
-            </MorphLayer>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => onOpenBookingChat(branch.name)}
+              className="w-full inline-flex items-center justify-center gap-1.5 py-2 text-xs text-[#5C574F] hover:text-[#1F3A2E] transition-colors cursor-pointer"
+            >
+              <MessageSquare className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Hoặc trò chuyện cùng chuyên viên tư vấn lịch hẹn</span>
+            </button>
           </div>
         </MorphLayer>
       </div>
+
+      {/* Tasting Booking Modal (Persists to Firestore /bookings or Local) */}
+      <AnimatePresence>
+        {bookingModalOpen && (
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="booking-modal-title"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: SILK_EASE }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setBookingModalOpen(false);
+            }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#191715]/60 overflow-y-auto"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              transition={MORPH_SPRING}
+              className="relative w-full max-w-lg bg-[#F8F7F4] border border-[#DDD8CE] p-6 sm:p-8"
+            >
+              <BronzeCorners size="sm" />
+              <div className="flex items-start justify-between gap-4 pb-4 border-b border-[#DDD8CE]">
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-[#7A5C38]">
+                    Đặt bàn Cupping &amp; Thử nếm
+                  </p>
+                  <h3
+                    id="booking-modal-title"
+                    className="mt-1 font-display text-2xl font-semibold text-[#191715]"
+                  >
+                    {branch.name}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setBookingModalOpen(false)}
+                  aria-label="Đóng biểu mẫu đặt lịch thử nếm"
+                  className="w-10 h-10 inline-flex items-center justify-center border border-[#DDD8CE] bg-[#FFFFFF] text-[#191715] hover:bg-[#EFECE6] cursor-pointer"
+                >
+                  <X className="w-4 h-4" aria-hidden="true" />
+                </button>
+              </div>
+
+              {bookingSuccess ? (
+                <div className="pt-5 space-y-4">
+                  <p className="text-sm font-medium text-[#1F3A2E]">
+                    Đã ghi nhận lịch hẹn thử nếm thành công.
+                  </p>
+                  <div className="p-4 bg-[#FFFFFF] border border-[#DDD8CE] space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-[#5C574F]">Mã giữ chỗ</span>
+                      <span className="font-mono font-semibold text-[#191715]">
+                        {bookingSuccess.bookingCode}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#5C574F]">Thời gian</span>
+                      <span className="font-mono text-[#191715]">
+                        {bookingSuccess.date} · {bookingSuccess.timeSlot}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#5C574F]">Số khách</span>
+                      <span className="font-mono text-[#191715]">
+                        {bookingSuccess.guests} khách
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2.5">
+                    <a
+                      href="#don-hang"
+                      onClick={() => setBookingModalOpen(false)}
+                      className="flex-1 py-3 px-4 bg-[#1F3A2E] text-[#F8F7F4] text-sm font-medium text-center hover:bg-[#162B22] transition-colors"
+                    >
+                      Xem trong sổ lịch hẹn
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setBookingModalOpen(false)}
+                      className="py-3 px-4 border border-[#DDD8CE] bg-[#FFFFFF] text-sm font-medium text-[#191715] cursor-pointer"
+                    >
+                      Đóng
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmitBooking} noValidate className="pt-5 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label
+                        htmlFor="booking-name"
+                        className="block text-xs font-medium text-[#191715] mb-1"
+                      >
+                        Họ và tên *
+                      </label>
+                      <input
+                        id="booking-name"
+                        type="text"
+                        value={bookingForm.guestName}
+                        onChange={(e) =>
+                          setBookingForm((p) => ({ ...p, guestName: e.target.value }))
+                        }
+                        placeholder="Trần Gia Bảo"
+                        className="w-full px-3 py-2.5 min-h-[42px] bg-[#FFFFFF] border border-[#DDD8CE] text-sm"
+                      />
+                      {bookingErrors.guestName && (
+                        <p role="alert" className="mt-1 text-xs text-[#8E2A2A]">
+                          {bookingErrors.guestName}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="booking-phone"
+                        className="block text-xs font-medium text-[#191715] mb-1"
+                      >
+                        Số điện thoại *
+                      </label>
+                      <input
+                        id="booking-phone"
+                        type="tel"
+                        value={bookingForm.guestPhone}
+                        onChange={(e) =>
+                          setBookingForm((p) => ({ ...p, guestPhone: e.target.value }))
+                        }
+                        placeholder="0912345678"
+                        className="w-full px-3 py-2.5 min-h-[42px] bg-[#FFFFFF] border border-[#DDD8CE] text-sm font-mono"
+                      />
+                      {bookingErrors.guestPhone && (
+                        <p role="alert" className="mt-1 text-xs text-[#8E2A2A]">
+                          {bookingErrors.guestPhone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div>
+                      <label
+                        htmlFor="booking-date"
+                        className="block text-xs font-medium text-[#191715] mb-1"
+                      >
+                        Ngày dự kiến *
+                      </label>
+                      <input
+                        id="booking-date"
+                        type="date"
+                        value={bookingForm.date}
+                        onChange={(e) =>
+                          setBookingForm((p) => ({ ...p, date: e.target.value }))
+                        }
+                        className="w-full px-3 py-2.5 min-h-[42px] bg-[#FFFFFF] border border-[#DDD8CE] text-sm font-mono"
+                      />
+                      {bookingErrors.date && (
+                        <p role="alert" className="mt-1 text-xs text-[#8E2A2A]">
+                          {bookingErrors.date}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="booking-slot"
+                        className="block text-xs font-medium text-[#191715] mb-1"
+                      >
+                        Khung giờ *
+                      </label>
+                      <select
+                        id="booking-slot"
+                        value={bookingForm.timeSlot}
+                        onChange={(e) =>
+                          setBookingForm((p) => ({ ...p, timeSlot: e.target.value }))
+                        }
+                        className="w-full px-3 py-2.5 min-h-[42px] bg-[#FFFFFF] border border-[#DDD8CE] text-sm"
+                      >
+                        {TIME_SLOTS.map((slot) => (
+                          <option key={slot} value={slot}>
+                            {slot}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="booking-guests"
+                        className="block text-xs font-medium text-[#191715] mb-1"
+                      >
+                        Số khách (1–12)
+                      </label>
+                      <input
+                        id="booking-guests"
+                        type="number"
+                        min={1}
+                        max={12}
+                        value={bookingForm.guests}
+                        onChange={(e) =>
+                          setBookingForm((p) => ({
+                            ...p,
+                            guests: Number(e.target.value) || 1,
+                          }))
+                        }
+                        className="w-full px-3 py-2.5 min-h-[42px] bg-[#FFFFFF] border border-[#DDD8CE] text-sm font-mono"
+                      />
+                      {bookingErrors.guests && (
+                        <p role="alert" className="mt-1 text-xs text-[#8E2A2A]">
+                          {bookingErrors.guests}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="booking-note"
+                      className="block text-xs font-medium text-[#191715] mb-1"
+                    >
+                      Yêu cầu riêng (tùy chọn)
+                    </label>
+                    <textarea
+                      id="booking-note"
+                      rows={2}
+                      value={bookingForm.note}
+                      onChange={(e) =>
+                        setBookingForm((p) => ({ ...p, note: e.target.value }))
+                      }
+                      placeholder="Ví dụ: Muốn thử các dòng Ethiopia Pour-over và Rừng Già pha phin"
+                      className="w-full px-3 py-2 bg-[#FFFFFF] border border-[#DDD8CE] text-sm"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={bookingSubmitting}
+                    className="w-full py-3.5 px-5 min-h-[46px] bg-[#1F3A2E] text-[#F8F7F4] text-sm font-medium hover:bg-[#162B22] disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    {bookingSubmitting ? 'Đang lưu lịch hẹn...' : 'Xác nhận đặt lịch thử nếm'}
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </MorphPage>
   );
 }

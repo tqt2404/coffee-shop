@@ -8,15 +8,17 @@ import {
   useSpring,
   useTransform,
 } from 'motion/react';
-import { HERO_IMAGE, PRODUCTS, ROASTERY_IMAGE } from '../data/products';
+import { HERO_IMAGE, PRODUCTS, ROASTERY_IMAGE } from '../../data/products';
+import { useMagnetic } from '../../hooks/useMagnetic';
 import {
   FAST_MORPH_SPRING,
   ORGANIC_SPRING,
   SILK_EASE,
   SILKY_SCROLL_SPRING,
-} from '../utils/motion';
-import { BronzeCorners, SplitHeadline } from './MorphStage';
-import { SafeImage } from './SafeImage';
+} from '../../utils/motion';
+import { InteractiveTiltCard } from '../../components/motion/InteractiveTiltCard';
+import { BronzeCorners, SplitHeadline } from '../../components/motion/MorphStage';
+import { SafeImage } from '../../components/ui/SafeImage';
 
 interface DeckChapter {
   index: number;
@@ -107,6 +109,7 @@ export function HeroMorphDeck() {
   const [activeSlide, setActiveSlide] = useState(0);
   const [isDesktop, setIsDesktop] = useState(true);
   const [plateHovered, setPlateHovered] = useState(false);
+  const primaryMagnet = useMagnetic(0.24);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 1024px)');
@@ -121,7 +124,6 @@ export function HeroMorphDeck() {
     offset: ['start start', 'end end'],
   });
 
-  // Silky inertial spring absorbs discrete mouse wheel ticks into liquid glide
   const smoothProgress = useSpring(scrollYProgress, {
     ...SILKY_SCROLL_SPRING,
     stiffness: 72,
@@ -134,7 +136,6 @@ export function HeroMorphDeck() {
     setActiveSlide((prev) => (prev === nextIdx ? prev : nextIdx));
   });
 
-  // Continuous PowerPoint Morph curves with subtle breathing scale & gentle tilt mid-glide
   const plateX = useTransform(
     smoothProgress,
     [0, 0.2, 0.42, 0.62, 0.84, 1],
@@ -151,7 +152,6 @@ export function HeroMorphDeck() {
     [0, 0, -1.25, 0, 0, 1.25, 0, 0]
   );
 
-  // Inner image parallax drift inside the framed photo plate
   const innerImageScale = useTransform(
     smoothProgress,
     [0, 0.31, 0.52, 0.73, 1],
@@ -175,7 +175,6 @@ export function HeroMorphDeck() {
     [0, 0, -26, 26, 0, 0, -26, 26, 0, 0]
   );
 
-  // Subtle background Roman watermark parallax
   const watermarkY = useTransform(smoothProgress, [0, 1], [30, -45]);
   const progressBarScale = useTransform(smoothProgress, [0, 1], [0.06, 1]);
 
@@ -202,7 +201,6 @@ export function HeroMorphDeck() {
       className="relative bg-[#F8F7F4] border-b border-[#DDD8CE] lg:h-[300vh]"
     >
       <div className="lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] flex flex-col justify-between overflow-x-clip">
-        {/* Subtle Flat Classical Roman Watermark in Background Depth */}
         <motion.div
           aria-hidden="true"
           style={{ y: watermarkY }}
@@ -223,7 +221,7 @@ export function HeroMorphDeck() {
         </motion.div>
 
         <div className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8 lg:pt-6 lg:pb-12 flex-1 flex flex-col justify-between">
-          {/* Top Page Folio Bar with Mechanical Slot-Roll Page Number */}
+          {/* Top Page Folio Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#DDD8CE]">
             <div className="flex items-center gap-3 text-xs">
               <span className="font-mono font-medium text-[#7A5C38] tracking-[0.12em] inline-flex items-center gap-1.5">
@@ -312,16 +310,14 @@ export function HeroMorphDeck() {
             </div>
           </div>
 
-          {/* Core Morph Stage: Multi-Component Choreography inside Copy & Photo Plate */}
+          {/* Core Morph Stage */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center my-6 lg:my-auto">
-            {/* Editorial Copy Column: Every Element Cascades Individually */}
             <motion.div
               style={isDesktop ? { x: copyX, y: copyY, opacity: copyOpacity } : undefined}
               className="lg:col-span-6 relative z-10 flex flex-col justify-between will-change-transform"
             >
               <AnimatePresence mode="wait">
                 <div key={`copy-slide-${chapter.index}`}>
-                  {/* 1. Accent Note with Self-Drawing Leading Rule */}
                   <motion.div
                     initial={{ opacity: 0, x: -16 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -342,7 +338,6 @@ export function HeroMorphDeck() {
                     </p>
                   </motion.div>
 
-                  {/* 2. Word-by-Word Masked Display Headline */}
                   <SplitHeadline
                     as="h1"
                     mode="animate"
@@ -351,7 +346,6 @@ export function HeroMorphDeck() {
                     className="font-display text-[2.2rem] sm:text-[2.95rem] lg:text-[3.25rem] font-semibold leading-[1.18] tracking-[-0.01em] text-[#191715] max-w-xl"
                   />
 
-                  {/* 3. Body Paragraph Delayed Silk Settle */}
                   <motion.p
                     initial={{ opacity: 0, y: 18 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -364,7 +358,6 @@ export function HeroMorphDeck() {
                 </div>
               </AnimatePresence>
 
-              {/* 4. Drawing Divider + Independent Staggered CTAs */}
               <div className="mt-7 pt-6 relative">
                 <motion.div
                   aria-hidden="true"
@@ -378,9 +371,11 @@ export function HeroMorphDeck() {
                 <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                   <motion.a
                     key={`cta-primary-${chapter.index}`}
+                    style={{ x: primaryMagnet.x, y: primaryMagnet.y }}
+                    onMouseMove={primaryMagnet.onMouseMove}
+                    onMouseLeave={primaryMagnet.onMouseLeave}
                     initial={{ opacity: 0, y: 14 }}
                     animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ y: -2, x: 2 }}
                     whileTap={{ scale: 0.97 }}
                     transition={{ duration: 0.45, delay: 0.22, ease: SILK_EASE }}
                     href={chapter.ctaHref}
@@ -415,18 +410,20 @@ export function HeroMorphDeck() {
               </div>
             </motion.div>
 
-            {/* Classical Framed Photo Plate with Parallax Inner Photo & Animated Corners */}
+            {/* Classical Framed Photo Plate with 3D Cursor Tilt + Scroll Morph */}
             <motion.div
               style={
                 isDesktop
                   ? { x: plateX, scale: plateScale, rotate: plateRotate }
                   : undefined
               }
-              onMouseEnter={() => setPlateHovered(true)}
-              onMouseLeave={() => setPlateHovered(false)}
               className="lg:col-span-6 relative z-20 will-change-transform"
             >
-              <div className="relative border border-[#DDD8CE] bg-[#EFECE6] p-3 sm:p-4 transition-colors duration-300 hover:border-[#7A5C38]">
+              <InteractiveTiltCard
+                maxTilt={4.5}
+                onHoverChange={setPlateHovered}
+                className="group border border-[#DDD8CE] bg-[#EFECE6] p-3 sm:p-4 transition-colors duration-300 hover:border-[#7A5C38]"
+              >
                 <BronzeCorners active={plateHovered} size="md" />
 
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#191715]">
@@ -451,14 +448,13 @@ export function HeroMorphDeck() {
                           src={chapter.image}
                           alt={chapter.imageAlt}
                           fallbackTitle={chapter.captionTitle}
-                          className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
+                          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                         />
                       </motion.div>
                     </AnimatePresence>
                   </motion.div>
                 </div>
 
-                {/* Split Opposing Caption Bar */}
                 <div className="pt-3 flex flex-wrap items-baseline justify-between gap-2 overflow-hidden">
                   <AnimatePresence mode="wait">
                     <motion.span
@@ -485,11 +481,11 @@ export function HeroMorphDeck() {
                     </motion.span>
                   </AnimatePresence>
                 </div>
-              </div>
+              </InteractiveTiltCard>
             </motion.div>
           </div>
 
-          {/* Bottom 4-Column Morphing Heritage Ledger (Every Label & Value Cascades Independently) */}
+          {/* Bottom 4-Column Morphing Heritage Ledger */}
           <div>
             <div className="grid grid-cols-2 lg:grid-cols-4 border-t border-l border-[#DDD8CE] bg-[#FFFFFF]">
               {chapter.ledger.map((item, idx) => (

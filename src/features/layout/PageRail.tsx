@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { FAST_MORPH_SPRING } from '../utils/motion';
+import { FAST_MORPH_SPRING } from '../../utils/motion';
 
 const PAGES = [
   { id: 'top', num: 'I–III', label: 'Khởi nguyên' },
@@ -10,10 +10,6 @@ const PAGES = [
   { id: 'don-hang', num: 'VII', label: 'Đơn hàng' },
 ];
 
-/**
- * Minimal classical typographic chapter rail pinned to the far RIGHT margin on wide desktop screens.
- * Never a left sidebar — zero decorative dots, pure hairline & Roman numeral navigation.
- */
 export function PageRail() {
   const [activeId, setActiveId] = useState('top');
 

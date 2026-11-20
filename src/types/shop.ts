@@ -15,6 +15,28 @@ export type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'name-asc';
 
 export type PaymentMethod = 'cod' | 'bank-transfer';
 
+export type OrderStatusCode =
+  | 'confirmed'
+  | 'roasting'
+  | 'shipped'
+  | 'completed'
+  | 'cancelled';
+
+export type BookingStatusCode =
+  | 'pending'
+  | 'confirmed'
+  | 'completed'
+  | 'cancelled';
+
+export interface SensoryProfile {
+  /** 1 to 5 scale */
+  acidity: number;
+  sweetness: number;
+  body: number;
+  aroma: number;
+  aftertaste: number;
+}
+
 export interface Product {
   id: string;
   slug: string;
@@ -27,6 +49,7 @@ export interface Product {
   process: string;
   roastLevel: RoastLevel;
   tastingNotes: string[];
+  sensoryProfile: SensoryProfile;
   description: string;
   basePrice: number; // Price for default weight (250g or 350ml)
   defaultWeight: WeightOption;
@@ -77,12 +100,39 @@ export interface CheckoutValidationResult {
 }
 
 export interface OrderRecord {
+  id?: string;
   orderNumber: string;
   createdAt: string;
   customer: CheckoutFormData;
   items: CartItem[];
   totals: OrderTotals;
   status: string;
+  statusCode?: OrderStatusCode;
+  source?: 'cloud' | 'local';
+}
+
+export interface TastingBookingInput {
+  branchId: 'dalat' | 'hanoi';
+  branchName: string;
+  guestName: string;
+  guestPhone: string;
+  date: string;
+  timeSlot: string;
+  guests: number;
+  note: string;
+}
+
+export interface TastingBookingRecord extends TastingBookingInput {
+  id: string;
+  bookingCode: string;
+  status: BookingStatusCode;
+  createdAt: string;
+  source: 'cloud' | 'local';
+}
+
+export interface BookingValidationResult {
+  isValid: boolean;
+  errors: Partial<Record<keyof TastingBookingInput, string>>;
 }
 
 export interface BrewMethodSpec {

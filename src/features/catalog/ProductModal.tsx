@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { GrindOption, Product, WeightOption } from '../types/shop';
+import type { GrindOption, Product, WeightOption } from '../../types/shop';
 import {
   FAST_MORPH_SPRING,
   MORPH_SPRING,
   ORGANIC_SPRING,
   SILK_EASE,
-} from '../utils/motion';
-import { calculateItemUnitPrice, formatVnd } from '../utils/shop';
-import { BronzeCorners } from './MorphStage';
-import { SafeImage } from './SafeImage';
+} from '../../utils/motion';
+import { calculateItemUnitPrice, formatVnd } from '../../utils/shop';
+import { BronzeCorners } from '../../components/motion/MorphStage';
+import { SensoryRadar } from '../../components/motion/SensoryRadar';
+import { SafeImage } from '../../components/ui/SafeImage';
 
 interface ProductModalProps {
   product: Product | null;
@@ -119,8 +120,8 @@ export function ProductModal({ product, onClose, onAddToCart }: ProductModalProp
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12">
-              {/* Left: Shared-Element Morph Photography & Cascading Provenance Ledger */}
-              <div className="lg:col-span-6 p-5 sm:p-8 border-b lg:border-b-0 lg:border-r border-[#DDD8CE]">
+              {/* Left: Shared-Element Morph Photo + Interactive 5-Axis Sensory Radar + Ledger */}
+              <div className="lg:col-span-6 p-5 sm:p-8 border-b lg:border-b-0 lg:border-r border-[#DDD8CE] space-y-5">
                 <div className="relative p-2 border border-[#DDD8CE] bg-[#EFECE6]">
                   <BronzeCorners size="sm" />
                   <motion.div
@@ -137,7 +138,10 @@ export function ProductModal({ product, onClose, onAddToCart }: ProductModalProp
                   </motion.div>
                 </div>
 
-                <dl className="mt-6 divide-y divide-[#DDD8CE] border-y border-[#DDD8CE] text-sm">
+                {/* Interactive 5-Axis Sensory Radar */}
+                <SensoryRadar profile={product.sensoryProfile} />
+
+                <dl className="divide-y divide-[#DDD8CE] border-y border-[#DDD8CE] text-sm">
                   {specs.map((spec, idx) => (
                     <motion.div
                       key={spec.label}

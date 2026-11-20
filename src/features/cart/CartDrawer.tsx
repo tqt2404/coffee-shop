@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, CheckCircle2, Minus, Plus, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { CartItem, CheckoutFormData, OrderRecord } from '../types/shop';
-import { EDITORIAL_EASE, MORPH_SPRING } from '../utils/motion';
+import { validatePromoViaApi } from '../../services/apiClient';
+import type { CartItem, CheckoutFormData, OrderRecord } from '../../types/shop';
+import { EDITORIAL_EASE, MORPH_SPRING } from '../../utils/motion';
 import {
   calculateOrderTotals,
   createOrderRecord,
   formatVnd,
   FREE_SHIPPING_THRESHOLD,
   validateCheckoutForm,
-} from '../utils/shop';
-import { SafeImage } from './SafeImage';
+} from '../../utils/shop';
+import { SafeImage } from '../../components/ui/SafeImage';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -20,7 +21,7 @@ interface CartDrawerProps {
   onUpdateQuantity: (lineId: string, delta: number) => void;
   onRemoveItem: (lineId: string) => void;
   onClose: () => void;
-  onCompleteOrder: (order: OrderRecord) => void;
+  onCompleteOrder: (order: OrderRecord) => Promise<OrderRecord>;
 }
 
 type DrawerStep = 'cart' | 'checkout' | 'confirmation';
@@ -46,10 +47,12 @@ export function CartDrawer({
 }: CartDrawerProps) {
   const [step, setStep] = useState<DrawerStep>('cart');
   const [promoInput, setPromoInput] = useState(promoCode);
+  const [promoServerError, setPromoServerError] = useState<string | null>(null);
   const [form, setForm] = useState<CheckoutFormData>(INITIAL_FORM);
   const [formErrors, setFormErrors] = useState<
     Partial<Record<keyof CheckoutFormData, string>>
   >({});
+  const [submitting, setSubmitting] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState<OrderRecord | null>(null);
 
   useEffect(() => {
@@ -73,12 +76,26 @@ export function CartDrawer({
     )
   );
 
-  const handleApplyPromo = (e: React.FormEvent) => {
+  const handleApplyPromo = async (e: React.FormEvent) => {
     e.preventDefault();
-    onPromoCodeChange(promoInput.trim());
+    const trimmed = promoInput.trim();
+    setPromoServerError(null);
+
+    if (!trimmed) {
+      onPromoCodeChange('');
+      return;
+    }
+
+    const apiResult = await validatePromoViaApi(trimmed, items);
+    if (apiResult && !apiResult.valid) {
+      setPromoServerError(apiResult.error || 'Mã ưu đãi không hợp lệ.');
+      onPromoCodeChange(trimmed);
+      return;
+    }
+    onPromoCodeChange(trimmed);
   };
 
-  const handleCheckoutSubmit = (e: React.FormEvent) => {
+  const handleCheckoutSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const validation = validateCheckoutForm(form);
     if (!validation.isValid) {
@@ -86,12 +103,17 @@ export function CartDrawer({
       return;
     }
 
-    const order = createOrderRecord(form, items, totals);
-    setConfirmedOrder(order);
-    setFormErrors({});
-    setForm(INITIAL_FORM);
-    onCompleteOrder(order);
-    setStep('confirmation');
+    setSubmitting(true);
+    try {
+      const draftOrder = createOrderRecord(form, items, totals);
+      const savedOrder = await onCompleteOrder(draftOrder);
+      setConfirmedOrder(savedOrder);
+      setFormErrors({});
+      setForm(INITIAL_FORM);
+      setStep('confirmation');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleCloseDrawer = () => {
@@ -101,6 +123,8 @@ export function CartDrawer({
     }
     onClose();
   };
+
+  const activePromoError = promoServerError || totals.promoError;
 
   return (
     <AnimatePresence>
@@ -185,7 +209,6 @@ export function CartDrawer({
                     </div>
                   ) : (
                     <>
-                      {/* Free Shipping Progress Bar (Solid Flat Color, NO Gradient) */}
                       <div className="px-5 sm:px-6 py-3.5 bg-[#EFECE6] border-b border-[#DDD8CE]">
                         <p className="text-xs text-[#191715]">
                           {totals.freeShippingRemaining === 0 ? (
@@ -212,7 +235,6 @@ export function CartDrawer({
                         </div>
                       </div>
 
-                      {/* Itemized Cart List */}
                       <div className="flex-1 overflow-y-auto px-5 sm:px-6 divide-y divide-[#DDD8CE]">
                         <AnimatePresence initial={false}>
                           {items.map((item) => (
@@ -286,7 +308,6 @@ export function CartDrawer({
                         </AnimatePresence>
                       </div>
 
-                      {/* Promo Code & Summary Footer */}
                       <div className="p-5 sm:p-6 bg-[#FFFFFF] border-t border-[#DDD8CE] space-y-4">
                         <form onSubmit={handleApplyPromo} className="flex gap-2">
                           <label htmlFor="promo-code-input" className="sr-only">
@@ -296,7 +317,10 @@ export function CartDrawer({
                             id="promo-code-input"
                             type="text"
                             value={promoInput}
-                            onChange={(e) => setPromoInput(e.target.value)}
+                            onChange={(e) => {
+                              setPromoInput(e.target.value);
+                              setPromoServerError(null);
+                            }}
                             placeholder="Mã ưu đãi (ví dụ: LACSON10)"
                             className="flex-1 px-3.5 py-2.5 min-h-[42px] bg-[#F8F7F4] border border-[#DDD8CE] text-sm font-mono text-[#191715] uppercase placeholder:normal-case placeholder:font-sans placeholder:text-[#5C574F]"
                           />
@@ -308,18 +332,22 @@ export function CartDrawer({
                           </button>
                         </form>
 
-                        {totals.promoError && (
+                        {activePromoError && (
                           <p role="alert" className="text-xs text-[#8E2A2A]">
-                            {totals.promoError}
+                            {activePromoError}
                           </p>
                         )}
                         {totals.promoApplied && (
                           <div className="flex items-center justify-between text-xs text-[#1F3A2E]">
-                            <span>Đã áp dụng mã {totals.promoApplied} (-10%)</span>
+                            <span>
+                              Đã áp dụng mã {totals.promoApplied} (-
+                              {Math.round(totals.discountRate * 100)}%)
+                            </span>
                             <button
                               type="button"
                               onClick={() => {
                                 setPromoInput('');
+                                setPromoServerError(null);
                                 onPromoCodeChange('');
                               }}
                               className="underline hover:text-[#191715] cursor-pointer"
@@ -590,10 +618,11 @@ export function CartDrawer({
                   <div className="p-5 sm:p-6 bg-[#FFFFFF] border-t border-[#DDD8CE]">
                     <motion.button
                       type="submit"
+                      disabled={submitting}
                       whileTap={{ scale: 0.985 }}
-                      className="w-full py-3.5 px-6 min-h-[48px] bg-[#1F3A2E] text-[#F8F7F4] text-sm font-medium hover:bg-[#162B22] transition-colors flex items-center justify-between cursor-pointer"
+                      className="w-full py-3.5 px-6 min-h-[48px] bg-[#1F3A2E] text-[#F8F7F4] text-sm font-medium hover:bg-[#162B22] disabled:opacity-50 transition-colors flex items-center justify-between cursor-pointer"
                     >
-                      <span>Xác nhận đặt hàng</span>
+                      <span>{submitting ? 'Đang ghi nhận đơn...' : 'Xác nhận đặt hàng'}</span>
                       <span className="font-mono tabular-nums">
                         {formatVnd(totals.total)}
                       </span>
@@ -615,7 +644,10 @@ export function CartDrawer({
                   <div>
                     <div className="inline-flex items-center gap-2 text-[#1F3A2E] mb-3">
                       <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
-                      <span className="text-xs font-medium">Đặt hàng thành công</span>
+                      <span className="text-xs font-medium">
+                        Đặt hàng thành công
+                        {confirmedOrder.source === 'cloud' ? ' · Đã đồng bộ Firestore' : ''}
+                      </span>
                     </div>
 
                     <h3 className="font-display text-3xl font-semibold text-[#191715]">

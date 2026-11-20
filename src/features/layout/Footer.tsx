@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { SILK_EASE } from '../utils/motion';
+import { SILK_EASE } from '../../utils/motion';
 
 export function Footer() {
   return (

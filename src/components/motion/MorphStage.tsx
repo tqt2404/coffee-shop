@@ -6,7 +6,7 @@ import {
   useTransform,
   type MotionValue,
 } from 'motion/react';
-import { SILK_EASE, SILKY_SCROLL_SPRING } from '../utils/motion';
+import { SILK_EASE, SILKY_SCROLL_SPRING } from '../../utils/motion';
 
 const MorphScrollContext = createContext<MotionValue<number> | null>(null);
 
@@ -23,11 +23,6 @@ interface MorphPageProps {
   children: ReactNode;
 }
 
-/**
- * Full-page architectural section driven by silky inertial scroll physics.
- * Every child MorphLayer / MorphRule / MorphParallaxImage reads the same smoothProgress
- * so all components choreograph smoothly IN on entry, rest crisply at 100%, and glide OUT on exit.
- */
 export function MorphPage({
   id,
   pageNumber,
@@ -49,8 +44,7 @@ export function MorphPage({
   const folioLeftX = useTransform(smoothProgress, [0.02, 0.2, 0.82, 0.96], [-28, 0, 0, -24]);
   const folioRightX = useTransform(smoothProgress, [0.02, 0.2, 0.82, 0.96], [28, 0, 0, 24]);
 
-  // Subtle classical architectural watermark numeral drifting in parallax depth
-  const watermarkY = useTransform(smoothProgress, [0, 1], [60, -60]);
+  const watermarkY = useTransform(smoothProgress, [0, 1], [68, -68]);
   const watermarkOpacity = useTransform(smoothProgress, [0.05, 0.25, 0.78, 0.96], [0, 1, 1, 0]);
 
   return (
@@ -60,18 +54,16 @@ export function MorphPage({
       data-morph-page={pageNumber}
       className={`relative min-h-[88vh] flex flex-col justify-center py-16 lg:py-24 border-b border-[#DDD8CE] overflow-x-clip ${bgClass}`}
     >
-      {/* Ultra-subtle flat classical page numeral watermark drifting in background depth */}
       <motion.span
         aria-hidden="true"
         style={{ y: watermarkY, opacity: watermarkOpacity }}
-        className="pointer-events-none select-none hidden xl:block absolute right-10 top-14 font-display text-[11rem] leading-none font-semibold text-[#191715]/[0.032] will-change-transform"
+        className="pointer-events-none select-none hidden xl:block absolute right-10 top-14 font-display text-[11.5rem] leading-none font-semibold text-[#191715]/[0.035] will-change-transform"
       >
         {pageNumber}
       </motion.span>
 
       <MorphScrollContext.Provider value={smoothProgress}>
         <div className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Classical Folio Marker + Self-Drawing Hairline Rule */}
           <div className="mb-8 lg:mb-10">
             <div className="flex items-center justify-between gap-4 text-xs mb-3">
               <motion.span
@@ -117,17 +109,11 @@ export type MorphVector =
 interface MorphLayerProps {
   children: ReactNode;
   vector?: MorphVector;
-  /** Sequential offset (0 to 0.14) so sibling and child components ripple naturally */
   stagger?: number;
-  /** Travel distance scale (default 1; use 0.35–0.6 for micro-components inside cards) */
   distance?: number;
   className?: string;
 }
 
-/**
- * Multi-plane scroll-driven Morph element with curved ease-out entry,
- * crystal-clear full-opacity resting plateau, and organic staggered exit.
- */
 export function MorphLayer({
   children,
   vector = 'up',
@@ -144,7 +130,6 @@ export function MorphLayer({
 
   const active = progress ?? localProgress;
 
-  // Curved 6-stop interpolation range gives silky deceleration (fast start, gentle landing)
   const e0 = Math.min(0.18, 0.02 + stagger);
   const e1 = Math.min(0.28, e0 + 0.085);
   const e2 = Math.min(0.38, e0 + 0.19);
@@ -210,9 +195,6 @@ interface MorphRuleProps {
   className?: string;
 }
 
-/**
- * Self-drawing architectural hairline rule synced to page scroll.
- */
 export function MorphRule({
   stagger = 0,
   origin = 'left',
@@ -251,10 +233,6 @@ interface MorphParallaxImageProps {
   className?: string;
 }
 
-/**
- * Continuous depth parallax for photography inside framed containers.
- * Image gently glides and breathes inside its frame as the user scrolls past.
- */
 export function MorphParallaxImage({
   children,
   drift = 16,
@@ -286,7 +264,6 @@ interface SplitHeadlineProps {
   text: string;
   className?: string;
   as?: 'h1' | 'h2' | 'h3';
-  /** 'animate' for immediate mount/slide transitions, 'inView' for scroll-triggered headlines */
   mode?: 'animate' | 'inView';
   baseDelay?: number;
 }
@@ -323,11 +300,6 @@ function ScrollMorphWord({ word, index, progress }: ScrollMorphWordProps) {
   );
 }
 
-/**
- * Editorial word-by-word masked curtain reveal.
- * - mode="inView": driven continuously by the parent MorphPage's silky scroll progress.
- * - mode="animate": immediate silk word cascade for slide/tab transitions.
- */
 export function SplitHeadline({
   text,
   className = '',
@@ -380,21 +352,17 @@ export function SplitHeadline({
 }
 
 interface BronzeCornersProps {
-  /** Whether corners expand slightly when parent card is hovered */
   active?: boolean;
   size?: 'sm' | 'md';
 }
 
-/**
- * Animated antique-bronze architectural corner brackets for cards and photo plates.
- */
 export function BronzeCorners({ active = false, size = 'sm' }: BronzeCornersProps) {
   const dim = size === 'md' ? 'w-3.5 h-3.5' : 'w-2.5 h-2.5';
   const tl = size === 'md' ? 'border-t-2 border-l-2' : 'border-t border-l';
   const tr = size === 'md' ? 'border-t-2 border-r-2' : 'border-t border-r';
   const bl = size === 'md' ? 'border-b-2 border-l-2' : 'border-b border-l';
   const br = size === 'md' ? 'border-b-2 border-r-2' : 'border-b border-r';
-  const shift = active ? 2 : 0;
+  const shift = active ? 2.5 : 0;
 
   return (
     <>
@@ -404,10 +372,10 @@ export function BronzeCorners({ active = false, size = 'sm' }: BronzeCornersProp
           x: -shift,
           y: -shift,
           opacity: active ? 1 : 0.72,
-          scale: active ? 1.12 : 1,
+          scale: active ? 1.14 : 1,
         }}
         transition={{ duration: 0.35, ease: SILK_EASE }}
-        className={`pointer-events-none absolute top-1.5 left-1.5 ${dim} ${tl} border-[#7A5C38]`}
+        className={`pointer-events-none absolute top-1.5 left-1.5 z-20 ${dim} ${tl} border-[#7A5C38]`}
       />
       <motion.span
         aria-hidden="true"
@@ -415,10 +383,10 @@ export function BronzeCorners({ active = false, size = 'sm' }: BronzeCornersProp
           x: shift,
           y: -shift,
           opacity: active ? 1 : 0.72,
-          scale: active ? 1.12 : 1,
+          scale: active ? 1.14 : 1,
         }}
         transition={{ duration: 0.35, ease: SILK_EASE }}
-        className={`pointer-events-none absolute top-1.5 right-1.5 ${dim} ${tr} border-[#7A5C38]`}
+        className={`pointer-events-none absolute top-1.5 right-1.5 z-20 ${dim} ${tr} border-[#7A5C38]`}
       />
       <motion.span
         aria-hidden="true"
@@ -426,10 +394,10 @@ export function BronzeCorners({ active = false, size = 'sm' }: BronzeCornersProp
           x: -shift,
           y: shift,
           opacity: active ? 1 : 0.72,
-          scale: active ? 1.12 : 1,
+          scale: active ? 1.14 : 1,
         }}
         transition={{ duration: 0.35, ease: SILK_EASE }}
-        className={`pointer-events-none absolute bottom-1.5 left-1.5 ${dim} ${bl} border-[#7A5C38]`}
+        className={`pointer-events-none absolute bottom-1.5 left-1.5 z-20 ${dim} ${bl} border-[#7A5C38]`}
       />
       <motion.span
         aria-hidden="true"
@@ -437,10 +405,10 @@ export function BronzeCorners({ active = false, size = 'sm' }: BronzeCornersProp
           x: shift,
           y: shift,
           opacity: active ? 1 : 0.72,
-          scale: active ? 1.12 : 1,
+          scale: active ? 1.14 : 1,
         }}
         transition={{ duration: 0.35, ease: SILK_EASE }}
-        className={`pointer-events-none absolute bottom-1.5 right-1.5 ${dim} ${br} border-[#7A5C38]`}
+        className={`pointer-events-none absolute bottom-1.5 right-1.5 z-20 ${dim} ${br} border-[#7A5C38]`}
       />
     </>
   );

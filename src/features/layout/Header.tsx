@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
-import { Menu, ShoppingBag, X } from 'lucide-react';
+import { LogIn, LogOut, Menu, ShoppingBag, User, X } from 'lucide-react';
 import { AnimatePresence, motion, useScroll, useSpring } from 'motion/react';
+import { useFirebase } from '../../lib/firebase/FirebaseProvider';
+import { useMagnetic } from '../../hooks/useMagnetic';
 import {
   FAST_MORPH_SPRING,
   ORGANIC_SPRING,
   SILK_EASE,
   SILKY_SCROLL_SPRING,
-} from '../utils/motion';
+} from '../../utils/motion';
 
 interface HeaderProps {
   cartCount: number;
+  cartPulseKey: number;
   onOpenCart: () => void;
 }
 
@@ -20,10 +23,12 @@ const NAV_LINKS = [
   { href: '#don-hang', label: 'Đơn hàng' },
 ];
 
-export function Header({ cartCount, onOpenCart }: HeaderProps) {
+export function Header({ cartCount, cartPulseKey, onOpenCart }: HeaderProps) {
+  const { user, authReady, authBusy, signInWithGoogle, signOutUser } = useFirebase();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const cartMagnet = useMagnetic(0.2);
 
   const { scrollYProgress } = useScroll();
   const smoothProgress = useSpring(scrollYProgress, SILKY_SCROLL_SPRING);
@@ -35,13 +40,18 @@ export function Header({ cartCount, onOpenCart }: HeaderProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  const shortName =
+    user?.displayName?.split(' ').slice(-1)[0] ||
+    user?.email?.split('@')[0] ||
+    'Tài khoản';
+
   return (
     <header
       className={`sticky top-0 z-40 border-b border-[#DDD8CE] transition-colors duration-300 ${
         scrolled ? 'bg-[#FFFFFF]' : 'bg-[#F8F7F4]'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4 lg:gap-8">
         {/* Zone 1: Single-line brand wordmark */}
         <motion.a
           href="#top"
@@ -56,7 +66,7 @@ export function Header({ cartCount, onOpenCart }: HeaderProps) {
         <nav
           aria-label="Điều hướng chính"
           onMouseLeave={() => setHoveredNav(null)}
-          className="hidden md:flex items-center gap-8 text-sm font-medium text-[#5C574F]"
+          className="hidden md:flex items-center gap-7 lg:gap-8 text-sm font-medium text-[#5C574F]"
         >
           {NAV_LINKS.map((link) => (
             <a
@@ -79,16 +89,50 @@ export function Header({ cartCount, onOpenCart }: HeaderProps) {
           ))}
         </nav>
 
-        {/* Zone 3: Primary Cart CTA with mechanical vertical slot-roll counter */}
+        {/* Zone 3: Auth Sync Action + Magnetic Primary Cart CTA */}
         <div className="flex items-center gap-2 shrink-0">
+          {authReady && (
+            user ? (
+              <button
+                type="button"
+                disabled={authBusy}
+                onClick={() => void signOutUser()}
+                aria-label={`Đăng xuất tài khoản ${user.email || shortName}`}
+                title="Đăng xuất Google"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] border border-[#DDD8CE] bg-[#FFFFFF] text-xs font-medium text-[#191715] hover:border-[#191715] transition-colors whitespace-nowrap cursor-pointer disabled:opacity-50"
+              >
+                <User className="w-3.5 h-3.5 text-[#1F3A2E]" aria-hidden="true" />
+                <span className="max-w-[96px] truncate">{shortName}</span>
+                <LogOut className="w-3.5 h-3.5 text-[#5C574F] ml-0.5" aria-hidden="true" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled={authBusy}
+                onClick={() => void signInWithGoogle()}
+                aria-label="Đăng nhập Google để đồng bộ đơn hàng"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] border border-[#DDD8CE] bg-[#FFFFFF] text-xs font-medium text-[#191715] hover:border-[#191715] transition-colors whitespace-nowrap cursor-pointer disabled:opacity-50"
+              >
+                <LogIn className="w-3.5 h-3.5 text-[#1F3A2E]" aria-hidden="true" />
+                <span>Đăng nhập</span>
+              </button>
+            )
+          )}
+
           <motion.button
+            id="header-cart-button"
             type="button"
-            whileHover={{ y: -1.5 }}
+            key={`cart-pulse-${cartPulseKey}`}
+            style={{ x: cartMagnet.x, y: cartMagnet.y }}
+            onMouseMove={cartMagnet.onMouseMove}
+            onMouseLeave={cartMagnet.onMouseLeave}
+            initial={cartPulseKey > 0 ? { scale: 1.09 } : false}
+            animate={{ scale: 1 }}
             whileTap={{ scale: 0.96 }}
             transition={ORGANIC_SPRING}
             onClick={onOpenCart}
             aria-label={`Mở giỏ hàng, hiện có ${cartCount} sản phẩm`}
-            className="inline-flex items-center gap-2 px-4 py-2.5 min-h-[40px] bg-[#1F3A2E] text-[#F8F7F4] text-sm font-medium hover:bg-[#162B22] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2.5 min-h-[40px] bg-[#1F3A2E] text-[#F8F7F4] text-sm font-medium hover:bg-[#162B22] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <ShoppingBag className="w-4 h-4 stroke-[1.75]" aria-hidden="true" />
             <span className="tabular-nums inline-flex items-center gap-1">
@@ -138,7 +182,7 @@ export function Header({ cartCount, onOpenCart }: HeaderProps) {
         className="h-[2px] w-full bg-[#1F3A2E] will-change-transform"
       />
 
-      {/* Mobile navigation dropdown with staggered link reveals */}
+      {/* Mobile navigation dropdown with staggered link reveals & Auth action */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.nav
@@ -166,6 +210,35 @@ export function Header({ cartCount, onOpenCart }: HeaderProps) {
                   </a>
                 </motion.li>
               ))}
+              {authReady && (
+                <li className="pt-3 pb-1">
+                  {user ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        void signOutUser();
+                      }}
+                      className="w-full py-2.5 px-3 border border-[#DDD8CE] bg-[#F8F7F4] text-sm font-medium text-[#191715] flex items-center justify-between cursor-pointer"
+                    >
+                      <span>{user.displayName || user.email}</span>
+                      <span className="text-xs text-[#7A5C38]">Đăng xuất</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        void signInWithGoogle();
+                      }}
+                      className="w-full py-2.5 px-3 border border-[#191715] bg-[#FFFFFF] text-sm font-medium text-[#191715] flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <LogIn className="w-4 h-4 text-[#1F3A2E]" aria-hidden="true" />
+                      <span>Đăng nhập Google để đồng bộ đơn hàng</span>
+                    </button>
+                  )}
+                </li>
+              )}
             </ul>
           </motion.nav>
         )}

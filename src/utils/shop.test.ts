@@ -2,8 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   addToCart,
+  BLUEPRINT_LIMITS,
   calculateItemUnitPrice,
   calculateOrderTotals,
+  createBookingRecord,
   createOrderRecord,
   filterAndSortProducts,
   formatVnd,
@@ -12,6 +14,7 @@ import {
   STANDARD_SHIPPING_FEE,
   updateCartQuantity,
   validateCheckoutForm,
+  validateTastingBooking,
 } from './shop';
 import { PRODUCTS } from '../data/products';
 
@@ -122,13 +125,13 @@ test('filterAndSortProducts supports diacritic-insensitive search and sorting', 
   assert.ok(ascending[0].basePrice <= ascending[ascending.length - 1].basePrice);
 });
 
-test('validateCheckoutForm enforces required Vietnamese fields and phone format', () => {
+test('validateCheckoutForm enforces required Vietnamese fields and blueprint bounds', () => {
   const invalid = validateCheckoutForm({
     fullName: '',
     phone: '123',
     address: '12',
     city: '',
-    note: '',
+    note: 'a'.repeat(BLUEPRINT_LIMITS.NOTE_MAX + 5),
     paymentMethod: 'cod',
   });
   assert.equal(invalid.isValid, false);
@@ -136,6 +139,7 @@ test('validateCheckoutForm enforces required Vietnamese fields and phone format'
   assert.ok(invalid.errors.phone);
   assert.ok(invalid.errors.address);
   assert.ok(invalid.errors.city);
+  assert.ok(invalid.errors.note);
 
   const valid = validateCheckoutForm({
     fullName: 'Nguyễn Minh Quân',
@@ -149,7 +153,7 @@ test('validateCheckoutForm enforces required Vietnamese fields and phone format'
   assert.deepEqual(valid.errors, {});
 });
 
-test('createOrderRecord generates deterministic order metadata and preserves snapshot', () => {
+test('createOrderRecord generates blueprint-compliant orderNumber and snapshot', () => {
   const cart = addToCart([], {
     productId: 'cold-brew-specialty',
     name: 'Cold Brew',
@@ -174,7 +178,44 @@ test('createOrderRecord generates deterministic order metadata and preserves sna
     new Date('2026-11-19T10:00:00.000Z')
   );
 
-  assert.match(order.orderNumber, /^LS-261119-\d{4}$/);
+  assert.match(order.orderNumber, BLUEPRINT_LIMITS.ORDER_NUMBER_PATTERN);
+  assert.equal(order.statusCode, 'confirmed');
   assert.equal(order.items.length, 1);
   assert.equal(order.totals.total, 300000);
+});
+
+test('validateTastingBooking and createBookingRecord enforce blueprint invariants', () => {
+  const bad = validateTastingBooking({
+    branchId: 'dalat',
+    branchName: 'Đà Lạt',
+    guestName: 'A',
+    guestPhone: '000',
+    date: '19-11-2026',
+    timeSlot: '',
+    guests: 20,
+    note: '',
+  });
+  assert.equal(bad.isValid, false);
+  assert.ok(bad.errors.guestName);
+  assert.ok(bad.errors.guestPhone);
+  assert.ok(bad.errors.date);
+  assert.ok(bad.errors.guests);
+
+  const goodInput = {
+    branchId: 'hanoi' as const,
+    branchName: 'Phòng Thử Nếm Hà Nội',
+    guestName: 'Lê Hoàng Nam',
+    guestPhone: '0912345678',
+    date: '2026-11-25',
+    timeSlot: '09:00 – 10:30',
+    guests: 3,
+    note: 'Thử các lô Ethiopia',
+  };
+  const ok = validateTastingBooking(goodInput);
+  assert.equal(ok.isValid, true);
+
+  const record = createBookingRecord(goodInput, new Date('2026-11-19T10:00:00.000Z'));
+  assert.match(record.bookingCode, BLUEPRINT_LIMITS.BOOKING_CODE_PATTERN);
+  assert.equal(record.status, 'pending');
+  assert.equal(record.guests, 3);
 });

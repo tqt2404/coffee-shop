@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { MessageSquare, RotateCcw, Send, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { CartItem, Product } from '../types/shop';
-import { EDITORIAL_EASE, MORPH_SPRING } from '../utils/motion';
-import { calculateOrderTotals, formatVnd } from '../utils/shop';
+import type { CartItem, Product } from '../../types/shop';
+import { EDITORIAL_EASE, MORPH_SPRING } from '../../utils/motion';
+import { calculateOrderTotals, formatVnd } from '../../utils/shop';
 
 export interface ChatMessage {
   id: string;
@@ -195,7 +195,6 @@ export function ChatWidget({
             aria-label="Trợ lý tư vấn Nhà Rang Lạc Sơn"
             className="w-[calc(100vw-2rem)] sm:w-[400px] h-[min(560px,calc(100vh-5rem))] bg-[#F8F7F4] border border-[#191715] flex flex-col overflow-hidden"
           >
-            {/* Header */}
             <div className="px-4 py-3.5 bg-[#191715] text-[#F8F7F4] flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="font-display text-lg font-semibold leading-tight truncate">
@@ -226,7 +225,6 @@ export function ChatWidget({
               </div>
             </div>
 
-            {/* Messages Area */}
             <div
               ref={listRef}
               className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#F8F7F4]"
@@ -275,7 +273,6 @@ export function ChatWidget({
                 </div>
               )}
 
-              {/* Quick Starter Prompts on first screen */}
               {messages.length === 1 && !isLoading && (
                 <div className="pt-2 space-y-1.5">
                   <p className="text-[11px] text-[#5C574F]">Gợi ý câu hỏi nhanh:</p>
@@ -293,7 +290,6 @@ export function ChatWidget({
               )}
             </div>
 
-            {/* Input Composer */}
             <form
               onSubmit={handleSubmit}
               className="p-3 bg-[#FFFFFF] border-t border-[#DDD8CE] flex items-center gap-2"

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { BREW_METHODS, ROASTERY_IMAGE } from '../data/products';
+import { BREW_METHODS, ROASTERY_IMAGE } from '../../data/products';
 import {
   FAST_MORPH_SPRING,
   ORGANIC_SPRING,
   SILK_EASE,
-} from '../utils/motion';
+} from '../../utils/motion';
+import { InteractiveTiltCard } from '../../components/motion/InteractiveTiltCard';
 import {
   BronzeCorners,
   MorphLayer,
@@ -13,8 +14,9 @@ import {
   MorphParallaxImage,
   MorphRule,
   SplitHeadline,
-} from './MorphStage';
-import { SafeImage } from './SafeImage';
+} from '../../components/motion/MorphStage';
+import { RoastCurveVisual } from '../../components/motion/RoastCurveVisual';
+import { SafeImage } from '../../components/ui/SafeImage';
 
 const PRINCIPLES = [
   {
@@ -47,17 +49,16 @@ export function CraftSection() {
     <MorphPage
       id="triet-ly-rang"
       pageNumber="05"
-      chapterTitle="Triết Lý Rang & Cẩm Nang Định Lượng"
+      chapterTitle="Triết Lý Rang & Hồ Sơ Nhiệt Giesen"
       bgClass="bg-[#EFECE6]"
     >
       {/* Part 1: Roastery Philosophy */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
-        {/* Left: Giesen Roaster Plate with Parallax Image, Animated Bronze Corners, and Sliding Caption */}
-        <MorphLayer vector="tilt-left" stagger={0} className="lg:col-span-6">
-          <div
-            onMouseEnter={() => setPlateHovered(true)}
-            onMouseLeave={() => setPlateHovered(false)}
-            className="relative h-full border border-[#DDD8CE] bg-[#F8F7F4] p-3 sm:p-4 flex flex-col transition-colors duration-300 hover:border-[#7A5C38]"
+        <MorphLayer vector="tilt-left" stagger={0} className="lg:col-span-6 flex">
+          <InteractiveTiltCard
+            maxTilt={4.2}
+            onHoverChange={setPlateHovered}
+            className="group border border-[#DDD8CE] bg-[#F8F7F4] p-3 sm:p-4 transition-colors duration-300 hover:border-[#7A5C38]"
           >
             <BronzeCorners active={plateHovered} size="md" />
             <div className="aspect-[4/3] lg:aspect-auto lg:flex-1 w-full overflow-hidden bg-[#191715]">
@@ -66,7 +67,7 @@ export function CraftSection() {
                   src={ROASTERY_IMAGE}
                   alt="Khay làm nguội hạt cà phê mới rang trên máy rang trống gang Giesen"
                   fallbackTitle="Xưởng Rang Giesen · Lạc Sơn"
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                 />
               </MorphParallaxImage>
             </div>
@@ -82,10 +83,9 @@ export function CraftSection() {
                 </span>
               </MorphLayer>
             </div>
-          </div>
+          </InteractiveTiltCard>
         </MorphLayer>
 
-        {/* Right: Principles Card where EVERY principle & divider animates independently */}
         <MorphLayer vector="tilt-right" stagger={0.02} className="lg:col-span-6 flex">
           <div className="relative flex-1 flex flex-col justify-between bg-[#FFFFFF] border border-[#DDD8CE] p-6 sm:p-8 lg:p-10">
             <BronzeCorners size="sm" />
@@ -134,10 +134,16 @@ export function CraftSection() {
         </MorphLayer>
       </div>
 
-      {/* Part 2: Interactive Brewing Calibration Guide — Every Cell & Step Choreographed */}
+      {/* Part 2: Live Interactive Giesen Roast Profile Curve */}
+      <MorphLayer vector="plate" stagger={0.035} className="mt-10 lg:mt-12 relative">
+        <BronzeCorners size="sm" />
+        <RoastCurveVisual />
+      </MorphLayer>
+
+      {/* Part 3: Interactive Brewing Calibration Guide */}
       <MorphLayer
         vector="plate"
-        stagger={0.04}
+        stagger={0.05}
         className="relative mt-10 lg:mt-12 bg-[#FFFFFF] border border-[#DDD8CE] p-6 sm:p-8 lg:p-10"
       >
         <BronzeCorners size="sm" />
@@ -235,7 +241,7 @@ export function CraftSection() {
           </div>
         </div>
 
-        {/* 4 Independently Staggered Parameter Cells with Mechanical Roll Numerals */}
+        {/* 4 Parameter Cells */}
         <div className="grid grid-cols-2 lg:grid-cols-4 border-b border-[#DDD8CE]">
           <MorphLayer
             vector="up"

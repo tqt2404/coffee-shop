@@ -16,6 +16,13 @@ export const PRODUCTS: Product[] = [
     process: 'Chế biến ướt & Tự nhiên',
     roastLevel: 'Rang đậm',
     tastingNotes: ['Sô-cô-la đen 75%', 'Đường thắng', 'Hạt dẻ rang'],
+    sensoryProfile: {
+      acidity: 2.0,
+      sweetness: 4.1,
+      body: 5.0,
+      aroma: 4.3,
+      aftertaste: 4.8,
+    },
     description:
       'Bản phối mang tinh thần cà phê phin Việt Nam cổ điển: thể chất dày dặn, hậu vị ngọt sâu không gắt, cân bằng giữa hương thơm thanh tao của Arabica Đà Lạt và độ đậm chắc của Fine Robusta Tây Nguyên.',
     basePrice: 245000,
@@ -40,6 +47,13 @@ export const PRODUCTS: Product[] = [
     process: 'Chế biến ướt (Washed)',
     roastLevel: 'Rang sáng vừa',
     tastingNotes: ['Hoa nhài trắng', 'Quả mọng rừng', 'Vỏ cam vàng'],
+    sensoryProfile: {
+      acidity: 4.8,
+      sweetness: 4.4,
+      body: 3.1,
+      aroma: 5.0,
+      aftertaste: 4.5,
+    },
     description:
       'Mẻ rang sáng vừa dành riêng cho Pour-over và pha giấy lọc. Cấu trúc hương trong trẻo, độ chua thanh tao của cam quýt mở ra tầng hương hoa nhài kéo dài khi cà phê hạ nhiệt.',
     basePrice: 340000,
@@ -64,6 +78,13 @@ export const PRODUCTS: Product[] = [
     process: 'Phơi giàn tự nhiên (Natural)',
     roastLevel: 'Rang sáng',
     tastingNotes: ['Việt quất chín', 'Hoa trắng', 'Cam Bergamot'],
+    sensoryProfile: {
+      acidity: 4.5,
+      sweetness: 4.9,
+      body: 3.6,
+      aroma: 4.9,
+      aftertaste: 4.7,
+    },
     description:
       'Được bảo quản trong hộp thiếc đen mờ kín khí kèm túi nạp nguyên hạt. Hương trái cây chín mọng nổi bật, vị ngọt siro mượt mà phù hợp làm quà biếu trang trọng hoặc thưởng thức hằng ngày.',
     basePrice: 420000,
@@ -88,6 +109,13 @@ export const PRODUCTS: Product[] = [
     process: 'Chế biến mật ong (Honey)',
     roastLevel: 'Rang sáng vừa',
     tastingNotes: ['Mật hoa rừng', 'Đào chín', 'Trà đen Ceylon'],
+    sensoryProfile: {
+      acidity: 4.1,
+      sweetness: 5.0,
+      body: 3.9,
+      aroma: 4.7,
+      aftertaste: 4.8,
+    },
     description:
       'Thu hoạch thủ công ở độ cao 2.200m và phơi chậm cùng lớp nhầy tự nhiên trong 18 ngày. Ly cà phê mang độ ngọt tròn trịa, hậu vị mượt như mật ong và hương trà đen thanh lịch.',
     basePrice: 365000,
@@ -112,6 +140,13 @@ export const PRODUCTS: Product[] = [
     process: 'Ủ lạnh 18 giờ ở 4°C',
     roastLevel: 'Rang sáng vừa',
     tastingNotes: ['Ca cao thanh', 'Mận chín', 'Hậu ngọt sạch'],
+    sensoryProfile: {
+      acidity: 2.9,
+      sweetness: 4.6,
+      body: 3.7,
+      aroma: 4.2,
+      aftertaste: 4.6,
+    },
     description:
       'Đóng chai thủy tinh hổ phách dày giúp ngăn tia UV và giữ nguyên tầng hương tinh tế. Dùng trực tiếp cùng đá viên lớn cho buổi sáng thanh tỉnh mà không cần pha chế.',
     basePrice: 135000,
@@ -137,6 +172,13 @@ export const PRODUCTS: Product[] = [
     process: 'Rang trống gang Giesen 12kg',
     roastLevel: 'Rang vừa',
     tastingNotes: ['Hạnh nhân nướng', 'Caramel mặn', 'Ca cao sữa'],
+    sensoryProfile: {
+      acidity: 3.2,
+      sweetness: 4.5,
+      body: 4.4,
+      aroma: 4.5,
+      aftertaste: 4.6,
+    },
     description:
       'Mẻ rang chữ ký của Nhà Rang Lạc Sơn trên trống gang Giesen cổ điển. Độ rang vừa giúp giữ vị ngọt đường nâu tự nhiên, phù hợp hoàn hảo cho cả pha phin không đường, sữa đá lẫn máy Espresso tại gia.',
     basePrice: 275000,

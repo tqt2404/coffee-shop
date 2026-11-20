@@ -4,7 +4,9 @@ import { FAST_MORPH_SPRING } from '../../utils/motion';
 
 const PAGES = [
   { id: 'top', num: 'I–III', label: 'Khởi nguyên' },
+  { id: 'trac-nghiem-hat', num: 'IIIB', label: 'Trắc nghiệm' },
   { id: 'bo-suu-tap', num: 'IV', label: 'Bộ sưu tập' },
+  { id: 'hop-qua-bieu', num: 'IVB', label: 'Hộp quà 3 vị' },
   { id: 'triet-ly-rang', num: 'V', label: 'Nghệ thuật rang' },
   { id: 'cua-hang', num: 'VI', label: 'Cửa hàng' },
   { id: 'don-hang', num: 'VII', label: 'Đơn hàng' },

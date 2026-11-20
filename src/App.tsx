@@ -61,6 +61,7 @@ import {
   removeCartItem,
   updateCartQuantity,
 } from './utils/shop';
+import { ArtisanCursor } from './components/motion/ArtisanCursor';
 import { EditorialCurtain } from './components/motion/EditorialCurtain';
 import { FlyToCartLayer } from './components/motion/FlyToCartLayer';
 import { KineticMarquee } from './components/motion/KineticMarquee';
@@ -69,14 +70,17 @@ import { AdminConsole, type AdminProductDraft } from './features/admin/AdminCons
 import { AuthModal } from './features/auth/AuthModal';
 import { CartDrawer } from './features/cart/CartDrawer';
 import { CatalogSection } from './features/catalog/CatalogSection';
+import { CompareDockAndModal } from './features/catalog/CompareDockAndModal';
 import { ProductModal } from './features/catalog/ProductModal';
 import { ChatWidget } from './features/chat/ChatWidget';
 import { CraftSection } from './features/craft/CraftSection';
+import { GiftBoxBuilderSection } from './features/giftbox/GiftBoxBuilderSection';
 import { HeroMorphDeck } from './features/hero/HeroMorphDeck';
 import { Footer } from './features/layout/Footer';
 import { Header } from './features/layout/Header';
 import { PageRail } from './features/layout/PageRail';
 import { OrderHistorySection } from './features/orders/OrderHistorySection';
+import { SommelierQuizSection } from './features/quiz/SommelierQuizSection';
 import { StoreLocatorSection } from './features/store-locator/StoreLocatorSection';
 
 const CART_STORAGE_KEY = 'lacson_cart_v1';
@@ -150,6 +154,8 @@ function StorefrontShell() {
   const [promoCode, setPromoCode] = useState('');
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [pendingChatPrompt, setPendingChatPrompt] = useState<string | null>(null);
@@ -327,8 +333,34 @@ function StorefrontShell() {
 
   const cartCount = useMemo(() => getCartItemCount(cart), [cart]);
 
+  const compareProducts = useMemo(
+    () =>
+      compareIds
+        .map((id) => catalog.find((p) => p.id === id))
+        .filter((p): p is Product => Boolean(p)),
+    [compareIds, catalog]
+  );
+
+  const handleToggleCompare = (product: Product) => {
+    setCompareIds((prev) => {
+      if (prev.includes(product.id)) {
+        return prev.filter((id) => id !== product.id);
+      }
+      if (prev.length >= 2) {
+        setToastText(`Đã đổi lô so sánh sang ${product.name}. Bấm Đối chiếu vị giác bên dưới.`);
+        return [prev[1], product.id];
+      }
+      if (prev.length === 1) {
+        setToastText(`Đã đủ 2 lô so sánh. Bấm "Đối chiếu vị giác" để mở biểu đồ chồng lớp.`);
+      } else {
+        setToastText(`Đã thêm ${product.name} vào khay so sánh. Chọn thêm 1 lô nữa.`);
+      }
+      return [...prev, product.id];
+    });
+  };
+
   const handleQuickAdd = (product: Product, origin?: { x: number; y: number }) => {
-    launchToCart(product.name, origin);
+    launchToCart(product.name, origin, product.image);
     setCart((prev) =>
       addToCart(prev, {
         productId: product.id,
@@ -343,6 +375,15 @@ function StorefrontShell() {
     setToastText(`Đã thêm ${product.name} (${product.defaultWeight}) vào giỏ hàng.`);
   };
 
+  const handleAddGiftBox = (
+    payload: Omit<CartItem, 'lineId'>,
+    origin?: { x: number; y: number }
+  ) => {
+    launchToCart(payload.name, origin, payload.image);
+    setCart((prev) => addToCart(prev, payload));
+    setToastText('Đã thêm Hộp Quà Biếu 3 Vị (ưu đãi 12%) kèm thiệp chúc vào giỏ hàng.');
+  };
+
   const handleAddFromModal = (payload: {
     product: Product;
     weight: WeightOption;
@@ -350,6 +391,7 @@ function StorefrontShell() {
     quantity: number;
     unitPrice: number;
   }) => {
+    launchToCart(payload.product.name, undefined, payload.product.image);
     setCart((prev) =>
       addToCart(prev, {
         productId: payload.product.id,
@@ -642,6 +684,7 @@ function StorefrontShell() {
     <MotionConfig reducedMotion="user">
       <LayoutGroup>
         <div className="min-h-screen flex flex-col bg-[#F8F7F4] text-[#191715]">
+          <ArtisanCursor />
           <EditorialCurtain />
           <FlyToCartLayer parcels={parcels} />
 
@@ -677,16 +720,27 @@ function StorefrontShell() {
               <main className="flex-1">
                 <HeroMorphDeck />
                 <KineticMarquee items={MARQUEE_ROASTERY} baseVelocity={-2.5} variant="ink" />
+                <SommelierQuizSection
+                  products={catalog}
+                  onSelectProduct={setSelectedProduct}
+                  onQuickAdd={handleQuickAdd}
+                />
                 <CatalogSection
                   products={filteredProducts}
                   activeCategory={activeCategory}
                   searchQuery={searchQuery}
                   sortBy={sortBy}
+                  compareIds={compareIds}
                   onCategoryChange={setActiveCategory}
                   onSearchChange={setSearchQuery}
                   onSortChange={setSortBy}
                   onSelectProduct={setSelectedProduct}
                   onQuickAdd={handleQuickAdd}
+                  onToggleCompare={handleToggleCompare}
+                />
+                <GiftBoxBuilderSection
+                  products={catalog}
+                  onAddGiftBox={handleAddGiftBox}
                 />
                 <CraftSection />
                 <KineticMarquee items={MARQUEE_CRAFT} baseVelocity={2.2} variant="parchment" />
@@ -713,6 +767,24 @@ function StorefrontShell() {
             onClose={() => setSelectedProduct(null)}
             onAddToCart={handleAddFromModal}
           />
+
+          {activeView === 'storefront' && (
+            <CompareDockAndModal
+              compareProducts={compareProducts}
+              isOpen={isCompareOpen}
+              onOpenModal={() => setIsCompareOpen(true)}
+              onCloseModal={() => setIsCompareOpen(false)}
+              onRemoveFromCompare={(id) =>
+                setCompareIds((prev) => prev.filter((x) => x !== id))
+              }
+              onClearCompare={() => {
+                setCompareIds([]);
+                setIsCompareOpen(false);
+              }}
+              onSelectProduct={setSelectedProduct}
+              onQuickAdd={handleQuickAdd}
+            />
+          )}
 
           <CartDrawer
             isOpen={isCartOpen}

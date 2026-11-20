@@ -15,11 +15,13 @@ interface CatalogSectionProps {
   activeCategory: ProductCategory | 'all';
   searchQuery: string;
   sortBy: SortOption;
+  compareIds: string[];
   onCategoryChange: (cat: ProductCategory | 'all') => void;
   onSearchChange: (q: string) => void;
   onSortChange: (sort: SortOption) => void;
   onSelectProduct: (product: Product) => void;
   onQuickAdd: (product: Product, origin?: { x: number; y: number }) => void;
+  onToggleCompare: (product: Product) => void;
 }
 
 const CATEGORIES: { value: ProductCategory | 'all'; label: string }[] = [
@@ -34,11 +36,13 @@ export function CatalogSection({
   activeCategory,
   searchQuery,
   sortBy,
+  compareIds,
   onCategoryChange,
   onSearchChange,
   onSortChange,
   onSelectProduct,
   onQuickAdd,
+  onToggleCompare,
 }: CatalogSectionProps) {
   return (
     <MorphPage
@@ -202,8 +206,10 @@ export function CatalogSection({
                 key={product.id}
                 product={product}
                 index={index}
+                isCompared={compareIds.includes(product.id)}
                 onSelect={onSelectProduct}
                 onQuickAdd={onQuickAdd}
+                onToggleCompare={onToggleCompare}
               />
             ))}
           </AnimatePresence>

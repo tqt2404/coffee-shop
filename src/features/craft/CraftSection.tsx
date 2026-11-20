@@ -17,6 +17,7 @@ import {
 } from '../../components/motion/MorphStage';
 import { RoastCurveVisual } from '../../components/motion/RoastCurveVisual';
 import { SafeImage } from '../../components/ui/SafeImage';
+import { LiveBrewTimer } from './LiveBrewTimer';
 
 const PRINCIPLES = [
   {
@@ -369,6 +370,9 @@ export function CraftSection() {
             </ol>
           </motion.div>
         </AnimatePresence>
+
+        {/* Live Interactive Brew Timer with Web Audio Bronze Bell */}
+        <LiveBrewTimer methodId={activeBrewId} methodName={brew.name} cups={cups} />
       </MorphLayer>
     </MorphPage>
   );

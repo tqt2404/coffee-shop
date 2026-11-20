@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Check, Plus, Scale } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { Product } from '../../types/shop';
 import { MORPH_SPRING, ORGANIC_SPRING, SILK_EASE } from '../../utils/motion';
@@ -17,8 +17,10 @@ import { SafeImage } from '../../components/ui/SafeImage';
 interface ProductCardProps {
   product: Product;
   index: number;
+  isCompared?: boolean;
   onSelect: (product: Product) => void;
   onQuickAdd: (product: Product, origin?: { x: number; y: number }) => void;
+  onToggleCompare?: (product: Product) => void;
 }
 
 function getCardVector(index: number): MorphVector {
@@ -31,8 +33,10 @@ function getCardVector(index: number): MorphVector {
 export function ProductCard({
   product,
   index,
+  isCompared = false,
   onSelect,
   onQuickAdd,
+  onToggleCompare,
 }: ProductCardProps) {
   const [hovered, setHovered] = useState(false);
   const row = Math.floor(index / 3);
@@ -63,44 +67,80 @@ export function ProductCard({
         <InteractiveTiltCard
           maxTilt={5.2}
           onHoverChange={setHovered}
-          className="group bg-[#FFFFFF] border border-[#DDD8CE] hover:border-[#7A5C38] transition-colors duration-300"
+          className={`group bg-[#FFFFFF] border transition-colors duration-300 ${
+            isCompared
+              ? 'border-[#1F3A2E]'
+              : 'border-[#DDD8CE] hover:border-[#7A5C38]'
+          }`}
         >
           <article className="relative flex flex-col flex-1">
             {/* 1. Animated Antique-Bronze Corner Marks */}
-            <BronzeCorners active={hovered} size="sm" />
+            <BronzeCorners active={hovered || isCompared} size="sm" />
 
             {/* 2. Shared-Element Morph + Continuous Scroll Parallax Photo */}
-            <motion.button
-              layoutId={`product-image-${product.id}`}
-              transition={MORPH_SPRING}
-              type="button"
-              onClick={() => onSelect(product)}
-              aria-label={`Xem chi tiết ${product.name}`}
-              className="relative block w-full aspect-[4/3] overflow-hidden bg-[#EFECE6] border-b border-[#DDD8CE] text-left cursor-pointer"
-            >
-              <MorphParallaxImage drift={11}>
-                <SafeImage
-                  src={product.image}
-                  alt={product.imageAlt}
-                  fallbackTitle={product.name}
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.07]"
-                />
-              </MorphParallaxImage>
-
-              {/* Sliding flat dark-ink roast telemetry tag on hover */}
-              <motion.span
-                aria-hidden="true"
-                initial={false}
-                animate={{
-                  y: hovered ? 0 : 8,
-                  opacity: hovered ? 1 : 0,
-                }}
-                transition={{ duration: 0.28, ease: SILK_EASE }}
-                className="pointer-events-none absolute bottom-3 left-3 px-2.5 py-1 bg-[#191715] text-[#F8F7F4] font-mono text-[10px] tracking-[0.08em]"
+            <div className="relative w-full aspect-[4/3] overflow-hidden bg-[#EFECE6] border-b border-[#DDD8CE]">
+              <motion.button
+                layoutId={`product-image-${product.id}`}
+                transition={MORPH_SPRING}
+                type="button"
+                data-cursor="Xem"
+                onClick={() => onSelect(product)}
+                aria-label={`Xem chi tiết ${product.name}`}
+                className="relative block w-full h-full text-left cursor-pointer"
               >
-                {product.batchCode} · {product.elevation}
-              </motion.span>
-            </motion.button>
+                <MorphParallaxImage drift={11}>
+                  <SafeImage
+                    src={product.image}
+                    alt={product.imageAlt}
+                    fallbackTitle={product.name}
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.07]"
+                  />
+                </MorphParallaxImage>
+
+                {/* Sliding flat dark-ink roast telemetry tag on hover */}
+                <motion.span
+                  layoutId={`product-batch-${product.id}`}
+                  aria-hidden="true"
+                  initial={false}
+                  animate={{
+                    y: hovered ? 0 : 8,
+                    opacity: hovered ? 1 : 0,
+                  }}
+                  transition={{ duration: 0.28, ease: SILK_EASE }}
+                  className="pointer-events-none absolute bottom-3 left-3 px-2.5 py-1 bg-[#191715] text-[#F8F7F4] font-mono text-[10px] tracking-[0.08em]"
+                >
+                  {product.batchCode} · {product.elevation}
+                </motion.span>
+              </motion.button>
+
+              {onToggleCompare && (
+                <motion.button
+                  type="button"
+                  data-cursor="So sánh"
+                  whileTap={{ scale: 0.92 }}
+                  transition={ORGANIC_SPRING}
+                  onClick={() => onToggleCompare(product)}
+                  aria-pressed={isCompared}
+                  aria-label={
+                    isCompared
+                      ? `Bỏ chọn so sánh ${product.name}`
+                      : `Chọn so sánh ${product.name}`
+                  }
+                  className={`absolute top-3 right-3 z-10 inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[32px] border text-[11px] font-medium transition-colors cursor-pointer ${
+                    isCompared
+                      ? 'bg-[#1F3A2E] text-[#F8F7F4] border-[#1F3A2E]'
+                      : 'bg-[#FFFFFF]/95 text-[#191715] border-[#DDD8CE] hover:border-[#191715]'
+                  }`}
+                >
+                  {isCompared ? (
+                    <Check className="w-3 h-3" aria-hidden="true" />
+                  ) : (
+                    <Scale className="w-3 h-3 text-[#7A5C38]" aria-hidden="true" />
+                  )}
+                  <span>{isCompared ? 'Đang so sánh' : 'So sánh'}</span>
+                </motion.button>
+              )}
+            </div>
 
             {/* Uniform Card Body with Granular Per-Element Choreography */}
             <div className="flex flex-col flex-1 p-5 sm:p-6">
@@ -246,6 +286,7 @@ export function ProductCard({
                     </motion.button>
                     <motion.button
                       type="button"
+                      data-cursor="Thêm"
                       whileHover={{ y: -1.5 }}
                       whileTap={{ scale: 0.94 }}
                       transition={ORGANIC_SPRING}

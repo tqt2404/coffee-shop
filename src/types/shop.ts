@@ -2,14 +2,28 @@ export type ProductCategory = 'single-origin' | 'phin-blend' | 'cold-brew';
 
 export type RoastLevel = 'Rang sáng' | 'Rang sáng vừa' | 'Rang vừa' | 'Rang đậm';
 
-export type WeightOption = '250g' | '500g' | '1kg' | '350ml';
+export type WeightOption = '250g' | '500g' | '1kg' | '350ml' | 'Hộp 3 × 250g';
 
 export type GrindOption =
   | 'Nguyên hạt'
   | 'Xay Pha Phin'
   | 'Xay Pour-over'
   | 'Xay Espresso'
-  | 'Uống liền';
+  | 'Uống liền'
+  | 'Hộp quà tùy phối';
+
+export type GiftSealStyle = 'lac-son' | 'coffee-blossom' | 'vintage-2026';
+
+export interface GiftBoxDetails {
+  slotNames: string[];
+  recipient: string;
+  sender: string;
+  message: string;
+  sealStyle: GiftSealStyle;
+  sealLabel: string;
+  originalTotal: number;
+  savingsAmount: number;
+}
 
 export type SortOption = 'featured' | 'price-asc' | 'price-desc' | 'name-asc';
 
@@ -86,6 +100,7 @@ export interface CartItem {
   grind: GrindOption;
   unitPrice: number;
   quantity: number;
+  giftDetails?: GiftBoxDetails;
 }
 
 export interface OrderTotals {

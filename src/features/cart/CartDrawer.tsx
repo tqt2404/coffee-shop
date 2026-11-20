@@ -275,6 +275,23 @@ export function CartDrawer({
                                   {item.weight} · {item.grind}
                                 </p>
 
+                                {item.giftDetails && (
+                                  <div className="mt-2 p-2.5 bg-[#FFFFFF] border border-[#DDD8CE] text-[11px] text-[#5C574F] space-y-1">
+                                    <p className="text-[#191715] font-medium">
+                                      3 vị: {item.giftDetails.slotNames.join(' · ')}
+                                    </p>
+                                    <p>
+                                      Thiệp gửi <strong className="text-[#191715]">{item.giftDetails.recipient}</strong> · Ấn sáp {item.giftDetails.sealLabel}
+                                    </p>
+                                    <p className="italic line-clamp-2">
+                                      “{item.giftDetails.message}”
+                                    </p>
+                                    <p className="font-mono text-[#1F3A2E]">
+                                      Đã tiết kiệm {formatVnd(item.giftDetails.savingsAmount)} (-12%)
+                                    </p>
+                                  </div>
+                                )}
+
                                 <div className="mt-3 flex items-center justify-between gap-3">
                                   <div className="inline-flex items-center border border-[#DDD8CE] bg-[#FFFFFF]">
                                     <button
@@ -698,13 +715,21 @@ export function CartDrawer({
 
                       <ul className="pt-3 border-t border-[#DDD8CE] space-y-2 text-xs sm:text-sm">
                         {confirmedOrder.items.map((item) => (
-                          <li key={item.lineId} className="flex justify-between gap-3">
-                            <span className="text-[#191715]">
-                              {item.quantity}× {item.name} ({item.weight} · {item.grind})
-                            </span>
-                            <span className="font-mono tabular-nums shrink-0">
-                              {formatVnd(item.unitPrice * item.quantity)}
-                            </span>
+                          <li key={item.lineId} className="space-y-0.5">
+                            <div className="flex justify-between gap-3">
+                              <span className="text-[#191715]">
+                                {item.quantity}× {item.name} ({item.weight} · {item.grind})
+                              </span>
+                              <span className="font-mono tabular-nums shrink-0">
+                                {formatVnd(item.unitPrice * item.quantity)}
+                              </span>
+                            </div>
+                            {item.giftDetails && (
+                              <p className="text-[11px] text-[#5C574F]">
+                                3 vị: {item.giftDetails.slotNames.join(' · ')} · Thiệp gửi{' '}
+                                {item.giftDetails.recipient} ({item.giftDetails.sealLabel})
+                              </p>
+                            )}
                           </li>
                         ))}
                       </ul>

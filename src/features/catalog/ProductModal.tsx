@@ -99,9 +99,8 @@ export function ProductModal({ product, onClose, onAddToCart }: ProductModalProp
             {/* Top Modal Header */}
             <div className="sticky top-0 z-10 flex items-center justify-between px-5 sm:px-8 py-4 bg-[#F8F7F4] border-b border-[#DDD8CE]">
               <motion.p
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.36, delay: 0.06, ease: SILK_EASE }}
+                layoutId={`product-batch-${product.id}`}
+                transition={MORPH_SPRING}
                 className="text-xs font-mono text-[#5C574F]"
               >
                 Mã mẻ rang: {product.batchCode} · {product.categoryLabel}

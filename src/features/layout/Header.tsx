@@ -1,5 +1,17 @@
-import { useEffect, useState } from 'react';
-import { LogIn, LogOut, Menu, ShoppingBag, User, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ChevronDown,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Menu,
+  Package,
+  ShieldCheck,
+  ShoppingBag,
+  Store,
+  User,
+  X,
+} from 'lucide-react';
 import { AnimatePresence, motion, useScroll, useSpring } from 'motion/react';
 import { useFirebase } from '../../lib/firebase/FirebaseProvider';
 import { useMagnetic } from '../../hooks/useMagnetic';
@@ -13,6 +25,8 @@ import {
 interface HeaderProps {
   cartCount: number;
   cartPulseKey: number;
+  activeView: 'storefront' | 'admin';
+  onSwitchView: (view: 'storefront' | 'admin') => void;
   onOpenCart: () => void;
 }
 
@@ -23,11 +37,20 @@ const NAV_LINKS = [
   { href: '#don-hang', label: 'Đơn hàng' },
 ];
 
-export function Header({ cartCount, cartPulseKey, onOpenCart }: HeaderProps) {
-  const { user, authReady, authBusy, signInWithGoogle, signOutUser } = useFirebase();
+export function Header({
+  cartCount,
+  cartPulseKey,
+  activeView,
+  onSwitchView,
+  onOpenCart,
+}: HeaderProps) {
+  const { appUser, isAdmin, authReady, authBusy, openAuthModal, signOutUser } =
+    useFirebase();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const cartMagnet = useMagnetic(0.2);
 
   const { scrollYProgress } = useScroll();
@@ -40,10 +63,37 @@ export function Header({ cartCount, cartPulseKey, onOpenCart }: HeaderProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const shortName =
-    user?.displayName?.split(' ').slice(-1)[0] ||
-    user?.email?.split('@')[0] ||
-    'Tài khoản';
+  useEffect(() => {
+    if (!accountMenuOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(e.target as Node)
+      ) {
+        setAccountMenuOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', onPointerDown);
+    return () => window.removeEventListener('mousedown', onPointerDown);
+  }, [accountMenuOpen]);
+
+  const shortName = isAdmin
+    ? 'Admin'
+    : appUser?.displayName?.split(' ').slice(-1)[0] ||
+      appUser?.username ||
+      appUser?.email?.split('@')[0] ||
+      'Tài khoản';
+
+  const handleNavClick = (href: string) => {
+    setMobileMenuOpen(false);
+    if (activeView !== 'storefront') {
+      onSwitchView('storefront');
+      window.setTimeout(() => {
+        const el = document.querySelector(href);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+    }
+  };
 
   return (
     <header
@@ -55,6 +105,9 @@ export function Header({ cartCount, cartPulseKey, onOpenCart }: HeaderProps) {
         {/* Zone 1: Single-line brand wordmark */}
         <motion.a
           href="#top"
+          onClick={() => {
+            if (activeView !== 'storefront') onSwitchView('storefront');
+          }}
           whileHover={{ x: 2 }}
           transition={ORGANIC_SPRING}
           className="font-display text-2xl sm:text-[26px] font-semibold tracking-tight text-[#191715] whitespace-nowrap shrink-0"
@@ -72,6 +125,7 @@ export function Header({ cartCount, cartPulseKey, onOpenCart }: HeaderProps) {
             <a
               key={link.href}
               href={link.href}
+              onClick={() => handleNavClick(link.href)}
               onMouseEnter={() => setHoveredNav(link.href)}
               onFocus={() => setHoveredNav(link.href)}
               className="relative py-2 whitespace-nowrap shrink-0 hover:text-[#191715] transition-colors"
@@ -89,28 +143,117 @@ export function Header({ cartCount, cartPulseKey, onOpenCart }: HeaderProps) {
           ))}
         </nav>
 
-        {/* Zone 3: Auth Sync Action + Magnetic Primary Cart CTA */}
+        {/* Zone 3: Account Menu (with Admin switch for role=admin) + Primary Cart CTA */}
         <div className="flex items-center gap-2 shrink-0">
           {authReady && (
-            user ? (
-              <button
-                type="button"
-                disabled={authBusy}
-                onClick={() => void signOutUser()}
-                aria-label={`Đăng xuất tài khoản ${user.email || shortName}`}
-                title="Đăng xuất Google"
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] border border-[#DDD8CE] bg-[#FFFFFF] text-xs font-medium text-[#191715] hover:border-[#191715] transition-colors whitespace-nowrap cursor-pointer disabled:opacity-50"
-              >
-                <User className="w-3.5 h-3.5 text-[#1F3A2E]" aria-hidden="true" />
-                <span className="max-w-[96px] truncate">{shortName}</span>
-                <LogOut className="w-3.5 h-3.5 text-[#5C574F] ml-0.5" aria-hidden="true" />
-              </button>
+            appUser ? (
+              <div ref={accountMenuRef} className="relative hidden sm:block">
+                <button
+                  type="button"
+                  disabled={authBusy}
+                  aria-label={`Tài khoản ${appUser.displayName}`}
+                  aria-expanded={accountMenuOpen}
+                  aria-haspopup="menu"
+                  onClick={() => setAccountMenuOpen((o) => !o)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] border text-xs font-medium transition-colors whitespace-nowrap cursor-pointer disabled:opacity-50 ${
+                    isAdmin
+                      ? 'border-[#7A5C38] bg-[#FFFFFF] text-[#191715] hover:border-[#191715]'
+                      : 'border-[#DDD8CE] bg-[#FFFFFF] text-[#191715] hover:border-[#191715]'
+                  }`}
+                >
+                  {isAdmin ? (
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#7A5C38]" aria-hidden="true" />
+                  ) : (
+                    <User className="w-3.5 h-3.5 text-[#1F3A2E]" aria-hidden="true" />
+                  )}
+                  <span className="max-w-[92px] truncate">{shortName}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-[#5C574F]" aria-hidden="true" />
+                </button>
+
+                <AnimatePresence>
+                  {accountMenuOpen && (
+                    <motion.div
+                      role="menu"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.16, ease: SILK_EASE }}
+                      className="absolute right-0 mt-1.5 w-64 bg-[#FFFFFF] border border-[#191715] z-50 divide-y divide-[#DDD8CE]"
+                    >
+                      <div className="px-4 py-3 bg-[#F8F7F4]">
+                        <p className="text-sm font-semibold text-[#191715] truncate">
+                          {appUser.displayName}
+                        </p>
+                        <p className="text-xs font-mono text-[#5C574F] truncate mt-0.5">
+                          {appUser.username ? `@${appUser.username}` : appUser.email}
+                        </p>
+                        <p className="text-[11px] font-mono text-[#7A5C38] mt-1">
+                          {isAdmin ? 'Quản trị viên (Admin)' : 'Thành viên (User)'} ·{' '}
+                          {appUser.provider === 'google' ? 'Google' : 'SHA-256'}
+                        </p>
+                      </div>
+
+                      <div className="py-1">
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setAccountMenuOpen(false);
+                              onSwitchView(activeView === 'admin' ? 'storefront' : 'admin');
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-xs font-medium text-[#1F3A2E] hover:bg-[#EFECE6] inline-flex items-center gap-2 cursor-pointer"
+                          >
+                            {activeView === 'admin' ? (
+                              <>
+                                <Store className="w-4 h-4" aria-hidden="true" />
+                                <span>Quay về Cửa hàng</span>
+                              </>
+                            ) : (
+                              <>
+                                <LayoutDashboard className="w-4 h-4" aria-hidden="true" />
+                                <span>Mở Bảng Quản Trị</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        <a
+                          href="#don-hang"
+                          role="menuitem"
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            handleNavClick('#don-hang');
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-xs font-medium text-[#191715] hover:bg-[#EFECE6] inline-flex items-center gap-2"
+                        >
+                          <Package className="w-4 h-4 text-[#5C574F]" aria-hidden="true" />
+                          <span>Sổ đơn hàng & lịch hẹn</span>
+                        </a>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            void signOutUser();
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-xs font-medium text-[#8E2A2A] hover:bg-[#EFECE6] inline-flex items-center gap-2 cursor-pointer"
+                        >
+                          <LogOut className="w-4 h-4" aria-hidden="true" />
+                          <span>Đăng xuất</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ) : (
               <button
                 type="button"
                 disabled={authBusy}
-                onClick={() => void signInWithGoogle()}
-                aria-label="Đăng nhập Google để đồng bộ đơn hàng"
+                onClick={openAuthModal}
+                aria-label="Mở cửa sổ đăng nhập tài khoản"
                 className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 min-h-[40px] border border-[#DDD8CE] bg-[#FFFFFF] text-xs font-medium text-[#191715] hover:border-[#191715] transition-colors whitespace-nowrap cursor-pointer disabled:opacity-50"
               >
                 <LogIn className="w-3.5 h-3.5 text-[#1F3A2E]" aria-hidden="true" />
@@ -182,7 +325,7 @@ export function Header({ cartCount, cartPulseKey, onOpenCart }: HeaderProps) {
         className="h-[2px] w-full bg-[#1F3A2E] will-change-transform"
       />
 
-      {/* Mobile navigation dropdown with staggered link reveals & Auth action */}
+      {/* Mobile navigation dropdown */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.nav
@@ -203,7 +346,7 @@ export function Header({ cartCount, cartPulseKey, onOpenCart }: HeaderProps) {
                 >
                   <a
                     href={link.href}
-                    onClick={() => setMobileMenuOpen(false)}
+                    onClick={() => handleNavClick(link.href)}
                     className="block py-3 text-base font-medium text-[#191715] hover:text-[#1F3A2E] transition-colors"
                   >
                     {link.label}
@@ -211,30 +354,53 @@ export function Header({ cartCount, cartPulseKey, onOpenCart }: HeaderProps) {
                 </motion.li>
               ))}
               {authReady && (
-                <li className="pt-3 pb-1">
-                  {user ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        void signOutUser();
-                      }}
-                      className="w-full py-2.5 px-3 border border-[#DDD8CE] bg-[#F8F7F4] text-sm font-medium text-[#191715] flex items-center justify-between cursor-pointer"
-                    >
-                      <span>{user.displayName || user.email}</span>
-                      <span className="text-xs text-[#7A5C38]">Đăng xuất</span>
-                    </button>
+                <li className="pt-3 pb-1 space-y-2">
+                  {appUser ? (
+                    <>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMobileMenuOpen(false);
+                            onSwitchView(activeView === 'admin' ? 'storefront' : 'admin');
+                          }}
+                          className="w-full py-2.5 px-3 bg-[#1F3A2E] text-[#F8F7F4] text-sm font-medium flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <LayoutDashboard className="w-4 h-4" aria-hidden="true" />
+                          <span>
+                            {activeView === 'admin'
+                              ? 'Quay về Cửa hàng'
+                              : 'Mở Bảng Quản Trị (Admin)'}
+                          </span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          void signOutUser();
+                        }}
+                        className="w-full py-2.5 px-3 border border-[#DDD8CE] bg-[#F8F7F4] text-sm font-medium text-[#191715] flex items-center justify-between cursor-pointer"
+                      >
+                        <span className="truncate">
+                          {appUser.displayName} ({isAdmin ? 'Admin' : 'User'})
+                        </span>
+                        <span className="text-xs text-[#8E2A2A] shrink-0 ml-2">
+                          Đăng xuất
+                        </span>
+                      </button>
+                    </>
                   ) : (
                     <button
                       type="button"
                       onClick={() => {
                         setMobileMenuOpen(false);
-                        void signInWithGoogle();
+                        openAuthModal();
                       }}
                       className="w-full py-2.5 px-3 border border-[#191715] bg-[#FFFFFF] text-sm font-medium text-[#191715] flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <LogIn className="w-4 h-4 text-[#1F3A2E]" aria-hidden="true" />
-                      <span>Đăng nhập Google để đồng bộ đơn hàng</span>
+                      <span>Đăng nhập / Tạo tài khoản</span>
                     </button>
                   )}
                 </li>

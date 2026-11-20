@@ -228,6 +228,130 @@
         }
       },
       "required": ["email", "createdAt"]
+    },
+    "CoffeeProduct": {
+      "title": "CoffeeProduct",
+      "description": "Specialty coffee catalog product managed exclusively by verified admins.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "slug": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "subtitle": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 160
+        },
+        "category": {
+          "type": "string",
+          "enum": ["single-origin", "phin-blend", "cold-brew"]
+        },
+        "categoryLabel": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "origin": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "elevation": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "process": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "roastLevel": {
+          "type": "string",
+          "enum": ["Rang sáng", "Rang sáng vừa", "Rang vừa", "Rang đậm"]
+        },
+        "tastingNotes": {
+          "type": "array",
+          "description": "Bounded list of up to 6 flavor notes."
+        },
+        "sensoryProfile": {
+          "type": "object",
+          "description": "5-axis sensory scores from 1 to 5."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "basePrice": {
+          "type": "number"
+        },
+        "defaultWeight": {
+          "type": "string",
+          "enum": ["250g", "500g", "1kg", "350ml"]
+        },
+        "availableWeights": {
+          "type": "array"
+        },
+        "availableGrinds": {
+          "type": "array"
+        },
+        "batchCode": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "stock": {
+          "type": "number"
+        },
+        "statusNote": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "image": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "imageAlt": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "slug",
+        "name",
+        "subtitle",
+        "category",
+        "categoryLabel",
+        "origin",
+        "elevation",
+        "process",
+        "roastLevel",
+        "tastingNotes",
+        "sensoryProfile",
+        "description",
+        "basePrice",
+        "defaultWeight",
+        "availableWeights",
+        "availableGrinds",
+        "batchCode",
+        "stock",
+        "statusNote",
+        "image",
+        "imageAlt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -242,6 +366,10 @@
     "/bookings/{bookingId}": {
       "schema": { "$ref": "#/entities/TastingBooking" },
       "description": "Tasting and cupping reservations at Dalat or Hanoi branches."
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/CoffeeProduct" },
+      "description": "Public storefront coffee catalog writable exclusively by verified admins."
     },
     "/admins/{adminId}": {
       "schema": { "$ref": "#/entities/AdminMember" },

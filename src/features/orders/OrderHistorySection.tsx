@@ -33,7 +33,7 @@ export function OrderHistorySection({
   onCancelOrder,
   onCancelBooking,
 }: OrderHistorySectionProps) {
-  const { user, authReady, authBusy, signInWithGoogle } = useFirebase();
+  const { appUser, authReady, authBusy, openAuthModal } = useFirebase();
   const [activeTab, setActiveTab] = useState<'orders' | 'bookings'>('orders');
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -49,9 +49,11 @@ export function OrderHistorySection({
           <p className="text-xs tracking-[0.06em] text-[#7A5C38] font-medium mb-1.5 inline-flex items-center gap-1.5">
             <Cloud className="w-3.5 h-3.5" aria-hidden="true" />
             <span>
-              {user
-                ? `Đồng bộ đám mây Firestore · ${user.email}`
-                : 'Lưu trên trình duyệt · Đăng nhập Google để đồng bộ Firestore'}
+              {appUser
+                ? appUser.provider === 'google'
+                  ? `Đồng bộ đám mây Firestore · ${appUser.email}`
+                  : `Tài khoản SHA-256 · @${appUser.username} (${appUser.role === 'admin' ? 'Admin' : 'Thành viên'})`
+                : 'Lưu trên trình duyệt · Đăng nhập tài khoản hoặc Google để đồng bộ'}
             </span>
           </p>
           <SplitHeadline
@@ -115,15 +117,15 @@ export function OrderHistorySection({
             </button>
           </div>
 
-          {authReady && !user && (
+          {authReady && !appUser && (
             <button
               type="button"
               disabled={authBusy}
-              onClick={() => void signInWithGoogle()}
+              onClick={openAuthModal}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[40px] border border-[#191715] bg-[#FFFFFF] text-xs font-medium text-[#191715] hover:bg-[#191715] hover:text-[#F8F7F4] transition-colors cursor-pointer disabled:opacity-50"
             >
               <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Đồng bộ với Google</span>
+              <span>Đăng nhập / Đồng bộ</span>
             </button>
           )}
         </MorphLayer>

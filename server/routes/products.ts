@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { PRODUCTS, STORE_BRANCHES } from '../../src/data/products.ts';
+import { STORE_BRANCHES } from '../../src/data/products.ts';
 import type { ProductCategory, SortOption } from '../../src/types/shop.ts';
 import { filterAndSortProducts } from '../../src/utils/shop.ts';
+import { findProductByIdOrSlug, listProducts } from '../services/storeService.ts';
 
 export const productsRouter = Router();
 
@@ -28,7 +29,7 @@ productsRouter.get('/', (req, res) => {
   ) as ProductCategory | 'all';
   const sortBy = (VALID_SORTS.has(rawSort) ? rawSort : 'featured') as SortOption;
 
-  const items = filterAndSortProducts(PRODUCTS, { category, query, sortBy });
+  const items = filterAndSortProducts(listProducts(), { category, query, sortBy });
   res.json({
     total: items.length,
     products: items,
@@ -37,9 +38,7 @@ productsRouter.get('/', (req, res) => {
 });
 
 productsRouter.get('/:id', (req, res) => {
-  const product = PRODUCTS.find(
-    (p) => p.id === req.params.id || p.slug === req.params.id
-  );
+  const product = findProductByIdOrSlug(req.params.id);
   if (!product) {
     res.status(404).json({ error: 'Không tìm thấy sản phẩm yêu cầu.' });
     return;

@@ -111,11 +111,68 @@ service cloud.firestore {
         data.updatedAt is timestamp;
     }
 
+    function isValidProduct(data, productId) {
+      return data.keys().hasAll([
+          'id', 'slug', 'name', 'subtitle', 'category', 'categoryLabel',
+          'origin', 'elevation', 'process', 'roastLevel', 'tastingNotes',
+          'sensoryProfile', 'description', 'basePrice', 'defaultWeight',
+          'availableWeights', 'availableGrinds', 'batchCode', 'stock',
+          'statusNote', 'image', 'imageAlt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id', 'slug', 'name', 'subtitle', 'category', 'categoryLabel',
+          'origin', 'elevation', 'process', 'roastLevel', 'tastingNotes',
+          'sensoryProfile', 'description', 'basePrice', 'defaultWeight',
+          'availableWeights', 'availableGrinds', 'isSingleUnit', 'batchCode',
+          'stock', 'statusNote', 'image', 'imageAlt', 'updatedAt'
+        ]) &&
+        data.id is string && data.id == productId && isValidId(data.id) &&
+        data.slug is string && isValidId(data.slug) &&
+        data.name is string && data.name.size() >= 3 && data.name.size() <= 120 &&
+        data.subtitle is string && data.subtitle.size() >= 3 && data.subtitle.size() <= 160 &&
+        data.category is string && data.category in ['single-origin', 'phin-blend', 'cold-brew'] &&
+        data.categoryLabel is string && data.categoryLabel.size() >= 2 && data.categoryLabel.size() <= 60 &&
+        data.origin is string && data.origin.size() >= 2 && data.origin.size() <= 120 &&
+        data.elevation is string && data.elevation.size() >= 2 && data.elevation.size() <= 60 &&
+        data.process is string && data.process.size() >= 2 && data.process.size() <= 100 &&
+        data.roastLevel is string && data.roastLevel in ['Rang sáng', 'Rang sáng vừa', 'Rang vừa', 'Rang đậm'] &&
+        data.tastingNotes is list && data.tastingNotes.size() >= 1 && data.tastingNotes.size() <= 6 && data.tastingNotes[0] is string &&
+        data.sensoryProfile is map &&
+        data.description is string && data.description.size() >= 10 && data.description.size() <= 600 &&
+        data.basePrice is number && data.basePrice >= 20000 && data.basePrice <= 50000000 &&
+        data.defaultWeight is string && data.defaultWeight in ['250g', '500g', '1kg', '350ml'] &&
+        data.availableWeights is list && data.availableWeights.size() >= 1 && data.availableWeights.size() <= 4 && data.availableWeights[0] is string &&
+        data.availableGrinds is list && data.availableGrinds.size() >= 1 && data.availableGrinds.size() <= 5 && data.availableGrinds[0] is string &&
+        (!('isSingleUnit' in data) || data.isSingleUnit is bool) &&
+        data.batchCode is string && data.batchCode.size() >= 2 && data.batchCode.size() <= 32 &&
+        data.stock is number && data.stock >= 0 && data.stock <= 10000 &&
+        data.statusNote is string && data.statusNote.size() <= 80 &&
+        data.image is string && data.image.size() >= 5 && data.image.size() <= 300 &&
+        data.imageAlt is string && data.imageAlt.size() >= 2 && data.imageAlt.size() <= 240 &&
+        data.updatedAt is timestamp;
+    }
+
     // === Collection: /admins/{adminId} ===
     match /admins/{adminId} {
       allow get: if isValidId(adminId) && (isOwner(adminId) || isAdmin());
       allow list: if isBootstrapAdmin();
       allow create, update, delete: if false;
+    }
+
+    // === Collection: /products/{productId} (Public Read, Admin-Only Write) ===
+    match /products/{productId} {
+      allow get: if isValidId(productId);
+      allow list: if true;
+      allow create: if isAdmin() &&
+        isValidId(productId) &&
+        isValidProduct(incoming(), productId) &&
+        incoming().updatedAt == request.time;
+      allow update: if isAdmin() &&
+        isValidId(productId) &&
+        isValidProduct(incoming(), productId) &&
+        incoming().id == existing().id &&
+        incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(productId);
     }
 
     // === Collection: /users/{userId} (PII Isolated) ===

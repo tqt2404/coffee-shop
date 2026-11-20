@@ -22,6 +22,20 @@ export type OrderStatusCode =
   | 'completed'
   | 'cancelled';
 
+export type UserRole = 'admin' | 'user';
+
+export type AuthProviderKind = 'password' | 'google';
+
+export interface AppUser {
+  uid: string;
+  username?: string;
+  email?: string;
+  displayName: string;
+  photoURL?: string;
+  role: UserRole;
+  provider: AuthProviderKind;
+}
+
 export type BookingStatusCode =
   | 'pending'
   | 'confirmed'

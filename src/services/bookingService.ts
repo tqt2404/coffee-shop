@@ -121,3 +121,59 @@ export async function cancelBookingInCloud(bookingId: string): Promise<void> {
     handleFirestoreError(error, OperationType.UPDATE, path);
   }
 }
+
+export function subscribeAllBookingsForAdmin(
+  onBookings: (bookings: TastingBookingRecord[]) => void,
+  onError?: (err: Error) => void
+): () => void {
+  return onSnapshot(
+    collection(db, BOOKINGS_COLLECTION),
+    (snapshot) => {
+      const list: TastingBookingRecord[] = snapshot.docs.map((snap) => {
+        const d = snap.data();
+        return {
+          id: snap.id,
+          bookingCode: String(d.bookingCode || snap.id),
+          branchId: d.branchId === 'hanoi' ? 'hanoi' : 'dalat',
+          branchName: String(d.branchName || ''),
+          guestName: String(d.guestName || ''),
+          guestPhone: String(d.guestPhone || ''),
+          date: String(d.date || ''),
+          timeSlot: String(d.timeSlot || ''),
+          guests: Number(d.guests || 2),
+          note: String(d.note || ''),
+          status: (d.status || 'pending') as BookingStatusCode,
+          createdAt: timestampToIso(d.createdAt),
+          source: 'cloud',
+        };
+      });
+
+      list.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      onBookings(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, BOOKINGS_COLLECTION);
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) onError(wrapped);
+      }
+    }
+  );
+}
+
+export async function updateBookingStatusInCloud(
+  bookingId: string,
+  status: BookingStatusCode
+): Promise<void> {
+  const path = `${BOOKINGS_COLLECTION}/${bookingId}`;
+  try {
+    await updateDoc(doc(db, BOOKINGS_COLLECTION, bookingId), {
+      status,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}

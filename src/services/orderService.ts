@@ -156,3 +156,87 @@ export async function cancelOrderInCloud(orderId: string): Promise<void> {
     handleFirestoreError(error, OperationType.UPDATE, path);
   }
 }
+
+const ORDER_STATUS_LABELS: Record<OrderStatusCode, string> = {
+  confirmed: 'Đã xác nhận · Đang chuẩn bị rang & đóng gói',
+  roasting: 'Đang rang mẻ mới trên trống gang Giesen',
+  shipped: 'Đang giao hàng toàn quốc',
+  completed: 'Đã giao thành công',
+  cancelled: 'Đã hủy đơn hàng',
+};
+
+export function subscribeAllOrdersForAdmin(
+  onOrders: (orders: OrderRecord[]) => void,
+  onError?: (err: Error) => void
+): () => void {
+  return onSnapshot(
+    collection(db, ORDERS_COLLECTION),
+    (snapshot) => {
+      const list: OrderRecord[] = snapshot.docs.map((snap) => {
+        const d = snap.data();
+        const items: CartItem[] = Array.isArray(d.items) ? d.items : [];
+        const subtotal = Number(d.subtotal || 0);
+        const discountAmount = Number(d.discountAmount || 0);
+        const shippingFee = Number(d.shippingFee || 0);
+        const total = Number(d.total || 0);
+        const promoApplied = d.promoApplied ? String(d.promoApplied) : null;
+
+        return {
+          id: snap.id,
+          orderNumber: String(d.orderNumber || snap.id),
+          createdAt: timestampToIso(d.createdAt),
+          customer: {
+            fullName: String(d.customerName || ''),
+            phone: String(d.customerPhone || ''),
+            address: String(d.customerAddress || ''),
+            city: String(d.customerCity || ''),
+            note: String(d.customerNote || ''),
+            paymentMethod: d.paymentMethod === 'bank-transfer' ? 'bank-transfer' : 'cod',
+          },
+          items,
+          totals: {
+            subtotal,
+            discountRate: subtotal > 0 ? discountAmount / subtotal : 0,
+            discountAmount,
+            shippingFee,
+            total,
+            freeShippingRemaining: 0,
+            promoApplied,
+            promoError: null,
+          },
+          status: String(d.statusLabel || 'Đã xác nhận'),
+          statusCode: (d.status || 'confirmed') as OrderStatusCode,
+          source: 'cloud',
+        };
+      });
+
+      list.sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      onOrders(list);
+    },
+    (error) => {
+      try {
+        handleFirestoreError(error, OperationType.LIST, ORDERS_COLLECTION);
+      } catch (wrapped) {
+        if (onError && wrapped instanceof Error) onError(wrapped);
+      }
+    }
+  );
+}
+
+export async function updateOrderStatusInCloud(
+  orderId: string,
+  status: OrderStatusCode
+): Promise<void> {
+  const path = `${ORDERS_COLLECTION}/${orderId}`;
+  try {
+    await updateDoc(doc(db, ORDERS_COLLECTION, orderId), {
+      status,
+      statusLabel: ORDER_STATUS_LABELS[status] || status,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}

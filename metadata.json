@@ -1,0 +1,6 @@
+{
+  "name": "Nhà Rang Lạc Sơn",
+  "description": "Cửa hàng cà phê đặc sản rang thủ công mẻ nhỏ từ Đà Lạt & các vùng trồng nguyên bản, tích hợp trợ lý tư vấn Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
